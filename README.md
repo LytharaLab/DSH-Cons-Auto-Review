@@ -142,3 +142,6 @@ DCAR 放宽的是「哪些操作还需要人工确认」，不是隔离边界：
 ## 许可
 
 [MIT](LICENSE)。复制和改编的 DeepSeek MIT 代码见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [THIRD_PARTY_LICENSE.txt](THIRD_PARTY_LICENSE.txt)。
+
+## CON？
+- 目前此项目由 [Con89524](https://github.com/Convex89524) 单人维护
