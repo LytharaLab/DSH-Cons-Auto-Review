@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全漏洞（私下报告）
+    url: https://github.com/LytharaLab/DSH-Cons-Auto-Review/security/advisories/new
+    about: 审查绕过、权限提升等安全问题请不要开公开 issue，见 SECURITY.md。
+  - name: 配置与兼容性说明
+    url: https://github.com/LytharaLab/DSH-Cons-Auto-Review/blob/main/docs/CONFIGURATION.md
+    about: 先查配置文档与 docs/COMPATIBILITY.md，很多问题在那里已有说明。

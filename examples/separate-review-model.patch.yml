@@ -1,0 +1,12 @@
+# Provider/model values must refer to a configured DSH route; replace these placeholders.
+- id: dcar
+  name: '@lytharalab/dsh-cons-auto-review'
+  config:
+    review:
+      provider: your-review-provider
+      model: your-review-model
+      maxTokens: 8192
+      maxTokensLimit: 32768
+      tokenLimitRetries: 2
+      preferLowReasoning: true
+      timeoutMs: 120000

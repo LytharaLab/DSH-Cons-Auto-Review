@@ -1,0 +1,48 @@
+DCAR 1.1.0 extracted npm package checks
+1.1.0 packaged public exports, legacy adapter, Cordis schema and defaults verified.
+{
+  "provider": "",
+  "model": "",
+  "reasoningEffort": "",
+  "preferLowReasoning": true,
+  "timeoutMs": 120000,
+  "maxTokens": 8192,
+  "maxTokensLimit": 32768,
+  "tokenLimitRetries": 2,
+  "tokenGrowthFactor": 2,
+  "chineseReasonRetries": 1,
+  "maxReasonChars": 600,
+  "showAction": true,
+  "maxActionChars": 3000,
+  "temperature": 0,
+  "retries": 0,
+  "retryDelayMs": 300,
+  "concurrency": 2,
+  "maxQueued": 128,
+  "onError": "ask",
+  "onDeny": "ask",
+  "policyAppend": "",
+  "maxInputChars": 180000,
+  "allowAsk": true
+}
+
+Selected package tests (8):
+✔ real LLM and tool services recover max-tokens before executing once (61.546072ms)
+✔ screenshot max-tokens scenario reaches Chinese native approval: rejected (18.454056ms)
+✔ screenshot max-tokens scenario reaches Chinese native approval: allowed-once (15.508809ms)
+✔ real native approval receives translated Chinese question before a rejected tool (12.340377ms)
+✔ bundle inserts only DCAR and does not depend on replacing the host permission row (6.460871ms)
+✔ native Settings persists CAutoR as the default and initializes reviewed new sessions (36.674914ms)
+✔ verdict labels do not consume the model question's presentation budget (9.937047ms)
+✔ configuration merges, freezes and validates all security fields (3.83071ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 325.600649
+
+TypeScript 5.9.3: --noEmit --strict --module nodenext --moduleResolution nodenext --target es2022 --skipLibCheck consumer.mts
+Exit 0: new configuration fields type-check; invalid string budget rejected.

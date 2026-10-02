@@ -1,0 +1,73 @@
+name: Bug 报告
+description: 报告 DCAR 的可复现问题（安装、权限模式、审查结果、崩溃）
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先确认：已经读过 [README](../blob/main/README.md) 与 [docs/COMPATIBILITY.md](../blob/main/docs/COMPATIBILITY.md)，
+        并且问题可以用最新版本复现。安全问题请走 [SECURITY.md](../blob/main/SECURITY.md) 的私下渠道，不要发在这里。
+  - type: input
+    id: dcar-version
+    attributes:
+      label: DCAR 版本
+      description: '/dcar status 输出的版本号，或 package.json 里的 version'
+      placeholder: '1.1.0'
+    validations:
+      required: true
+  - type: input
+    id: dsh-version
+    attributes:
+      label: DSH 版本与运行方式
+      description: DSH 版本号，以及 Desktop / Web / CLI 与 profile 名
+      placeholder: '0.2.0-rc.2 · Desktop · desktop'
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 系统与 Node.js
+      placeholder: 'Windows 11 24H2 · Node.js v24.13.0'
+    validations:
+      required: true
+  - type: dropdown
+    id: preset
+    attributes:
+      label: 触发时的权限模式
+      options:
+        - CAutoR
+        - Auto review（官方）
+        - workspace-write
+        - read-only
+        - danger-full-access
+        - 其他 / 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 尽量给出最小步骤，包含工具名与完整参数（敏感内容请脱敏）
+      placeholder: |
+        1. 选择 CAutoR
+        2. 让 Agent 执行 ...
+        3. 预期 ... 实际 ...
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: 相关配置
+      description: profile 中 dcar 插件行的 config，或 /dcar config 的输出（请去掉密钥）
+      render: yaml
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志或审查记录
+      description: '/dcar history 的输出、DSH 日志片段或截图；默认日志不记录工具参数正文，可自行补充'
+      render: text
+    validations:
+      required: false

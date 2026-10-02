@@ -1,0 +1,30 @@
+# Add this overlay after the installed DCAR package layer in your profile.
+- id: dcar
+  name: '@lytharalab/dsh-cons-auto-review'
+  config:
+    rules:
+      includeTempRoots: true
+      allowOutsideReads: true
+      additionalWritableRoots: []
+      alwaysReviewTools: []
+    shell:
+      trustedCommands: []
+    review:
+      timeoutMs: 120000
+      maxTokens: 8192
+      maxTokensLimit: 32768
+      tokenLimitRetries: 2
+      preferLowReasoning: true
+      concurrency: 2
+      retries: 0
+      onDeny: ask
+      onError: ask
+    cache:
+      enabled: false
+    audit:
+      file: .dcar/audit.jsonl
+      includeArguments: false
+      historyLimit: 200
+    commands:
+      enabled: true
+      allowSessionConfig: true

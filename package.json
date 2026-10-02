@@ -1,0 +1,108 @@
+{
+  "name": "@lytharalab/dsh-cons-auto-review",
+  "version": "1.1.0",
+  "description": "Con's 自动审查（DCAR）：确定性规则优先、LLM 按需升级的 DeepSeek Harness 工具审查插件，提供 CAutoR 权限模式。Deterministic-first auto review for DeepSeek Harness.",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./core": "./src/engine.js",
+    "./config": "./src/config.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json",
+    "./permission-presets": "./src/permission-presets.js"
+  },
+  "files": [
+    "src",
+    "locale",
+    "cordis.patch.yml",
+    "icon.svg",
+    "docs",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "THIRD_PARTY_LICENSE.txt"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "license": "MIT",
+  "author": "Con89524 / LytharaLab",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LytharaLab/DSH-Cons-Auto-Review.git"
+  },
+  "homepage": "https://github.com/LytharaLab/DSH-Cons-Auto-Review#readme",
+  "bugs": {
+    "url": "https://github.com/LytharaLab/DSH-Cons-Auto-Review/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "deepseek",
+    "cordis",
+    "auto-review",
+    "approval",
+    "permission-preset",
+    "sandbox",
+    "CAutoR",
+    "DCAR"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node scripts/check.mjs",
+    "verify": "npm run check && npm test",
+    "prepublishOnly": "npm run verify",
+    "pack:release": "npm pack --ignore-scripts"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.0",
+    "@deepseek-ai/dsh-llm": ">=0.0.1-rc.1",
+    "@deepseek-ai/dsh-permission-presets": "0.1.7-rc.2 || 0.2.0-rc.2",
+    "@deepseek-ai/dsh-sandbox": ">=0.0.1-rc.1",
+    "@deepseek-ai/dsh-util-values": ">=0.0.1-rc.1",
+    "@deepseek-ai/schemastery": "*",
+    "@deepseek-ai/dsh-user-approval": "0.1.7-rc.2 || 0.2.0-rc.2"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.4",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.5",
+    "@deepseek-ai/dsh-attachment": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-commands": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-fs": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-fs-local": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-llm": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-permission-presets": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-sandbox": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-sandbox-policy": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-scope": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-session": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-session-projection": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-settings": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-shell": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-system-prompt": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-tool-fs": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-user-approval": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-util-values": "0.2.0-rc.2",
+    "@deepseek-ai/schemastery": "3.18.4",
+    "yaml": "2.8.3"
+  },
+  "icon": "./icon.svg",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

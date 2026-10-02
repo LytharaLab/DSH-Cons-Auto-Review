@@ -1,0 +1,13 @@
+- id: dcar
+  name: '@lytharalab/dsh-cons-auto-review'
+  config:
+    rules:
+      allowOutsideReads: false
+      includeTempRoots: false
+    review:
+      onError: deny
+      onDeny: deny
+      allowAsk: false
+      timeoutMs: 30000
+    cache:
+      enabled: false

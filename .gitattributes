@@ -1,0 +1,14 @@
+# 统一用 LF 换行，避免 Windows 与 CI 之间的差异
+* text=auto eol=lf
+
+# 二进制与归档文件不做换行转换
+*.tgz binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+
+# 生成物与锁文件在 diff 里折叠
+package-lock.json linguist-generated=true
+pnpm-lock.yaml linguist-generated=true
+SHA256SUMS linguist-generated=true

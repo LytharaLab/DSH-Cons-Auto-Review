@@ -1,0 +1,5 @@
+# DCAR extends the existing permission service at activation; no host row replacement.
+- insert:
+    - id: dcar
+      name: '@lytharalab/dsh-cons-auto-review'
+      config: {}

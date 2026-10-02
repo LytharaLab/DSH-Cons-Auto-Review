@@ -1,0 +1,121 @@
+{
+  "enabled": true,
+  "inheritSubagents": true,
+  "rules": {
+    "enabled": true,
+    "allowOutsideReads": true,
+    "includeTempRoots": true,
+    "additionalWritableRoots": [],
+    "protectedPaths": [
+      "**/.git/**",
+      "**/.dsh/**",
+      "**/.dcar/**",
+      "**/.ssh/**",
+      "**/.aws/**",
+      "**/.gnupg/**",
+      "**/.env",
+      "**/.env.*",
+      "**/.npmrc",
+      "**/credentials.json"
+    ],
+    "safeEnvironmentFiles": [
+      ".env.example",
+      ".env.sample",
+      ".env.template"
+    ],
+    "readTools": [
+      "read",
+      "read_image"
+    ],
+    "searchTools": [
+      "glob",
+      "grep",
+      "ls"
+    ],
+    "writeTools": [
+      "write",
+      "edit"
+    ],
+    "harmlessTools": [
+      "todo_write"
+    ],
+    "alwaysReviewTools": [],
+    "trustedTools": [],
+    "customTools": [],
+    "maxArgumentBytes": 2097152
+  },
+  "shell": {
+    "enabled": true,
+    "tools": [
+      "bash",
+      "pwsh"
+    ],
+    "readCommands": [
+      "pwd",
+      "ls",
+      "cat",
+      "head",
+      "tail",
+      "wc",
+      "rg",
+      "grep",
+      "echo",
+      "Get-Location",
+      "Get-ChildItem",
+      "Get-Content",
+      "Write-Output"
+    ],
+    "workspaceMutationCommands": [
+      "mkdir",
+      "touch"
+    ],
+    "trustedCommands": [],
+    "maxCommandChars": 8192
+  },
+  "review": {
+    "provider": "",
+    "model": "",
+    "reasoningEffort": "",
+    "preferLowReasoning": true,
+    "timeoutMs": 120000,
+    "maxTokens": 8192,
+    "maxTokensLimit": 32768,
+    "tokenLimitRetries": 2,
+    "tokenGrowthFactor": 2,
+    "chineseReasonRetries": 1,
+    "maxReasonChars": 600,
+    "showAction": true,
+    "maxActionChars": 3000,
+    "temperature": 0,
+    "retries": 0,
+    "retryDelayMs": 300,
+    "concurrency": 2,
+    "maxQueued": 128,
+    "onError": "ask",
+    "onDeny": "ask",
+    "policyAppend": "",
+    "maxInputChars": 180000,
+    "allowAsk": true
+  },
+  "cache": {
+    "enabled": false,
+    "ttlMs": 30000,
+    "maxEntries": 128
+  },
+  "audit": {
+    "enabled": true,
+    "file": "",
+    "maxBytes": 5242880,
+    "historyLimit": 200,
+    "includeArguments": false,
+    "includeReasons": true
+  },
+  "commands": {
+    "enabled": true,
+    "name": "dcar",
+    "allowSessionConfig": true
+  },
+  "lifecycle": {
+    "fallbackPreset": "workspace-write"
+  }
+}
