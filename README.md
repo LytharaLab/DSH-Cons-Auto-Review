@@ -1,4 +1,4 @@
-# Con's 自动审查 — DCAR 1.1.0
+# Con's 自动审查 — DCAR 1.2.0
 
 [![npm version](https://img.shields.io/npm/v/@lytharalab/dsh-cons-auto-review.svg)](https://www.npmjs.com/package/@lytharalab/dsh-cons-auto-review)
 [![CI](https://github.com/LytharaLab/DSH-Cons-Auto-Review/actions/workflows/ci.yml/badge.svg)](https://github.com/LytharaLab/DSH-Cons-Auto-Review/actions/workflows/ci.yml)
@@ -10,7 +10,7 @@
 
 ## 安装与启用
 
-包已发布到 npm：[`@lytharalab/dsh-cons-auto-review`](https://www.npmjs.com/package/@lytharalab/dsh-cons-auto-review)。要求 Node.js 22.19+ 或 24+；兼容并测试 DSH **0.1.7-rc.2**、**0.2.0-rc.2**。DSH 的插件 API 仍在变化，其他版本不作为 1.1.0 的兼容承诺。
+包已发布到 npm：[`@lytharalab/dsh-cons-auto-review`](https://www.npmjs.com/package/@lytharalab/dsh-cons-auto-review)。要求 Node.js 22.19+ 或 24+；兼容并测试 DSH **0.1.7-rc.2**、**0.2.0-rc.2**。DSH 的插件 API 仍在变化，其他版本不作为 1.2.0 的兼容承诺。
 
 ```powershell
 dsh plugin --profile desktop add @lytharalab/dsh-cons-auto-review
@@ -20,7 +20,7 @@ Web 使用 `--profile web`。也可以离线安装解压的项目目录或仓库
 
 ```powershell
 dsh plugin --profile desktop add "L:\Projects\DSH-Cons-Auto-Review"
-dsh plugin --profile desktop add "L:\Projects\DSH-Cons-Auto-Review\lytharalab-dsh-cons-auto-review-1.1.0.tgz"
+dsh plugin --profile desktop add "L:\Projects\DSH-Cons-Auto-Review\lytharalab-dsh-cons-auto-review-1.2.0.tgz"
 ```
 
 **从旧包名升级：**包在首次公开发布时由 `dsh-cons-auto-review` 改名为 `@lytharalab/dsh-cons-auto-review`。关闭 Desktop，先移除旧包再装新包，然后重新打开：
@@ -52,6 +52,7 @@ profile 配置里若残留 `name: dsh-cons-auto-review` 的插件行或覆盖片
 - Shell 快速检查：支持一组明确的只读命令及 `mkdir` / `touch`；未知命令、脚本、管道、重定向、变量展开、通配符和复合命令升级审查。`npm run`、Python、Node 和 Git 默认升级，因为脱离沙箱后它们可以产生工作区外的效果。
 - 可配置工具分类、强制审查工具、显式信任工具、自定义路径字段，以及严格匹配完整 argv 的信任命令。
 - LLM 默认使用当前 Agent 的 provider / model；可指定单独的审查模型、推理档位、输出额度、温度、策略补充、并发上限、超时与重试。
+- 长会话上下文预算：历史与项目指令各自裁剪并留下显式的 `omitted-context` 说明，**待执行动作永不裁剪**；避免会话变长后每个操作都退回人工授权。
 - 修复 `reviewer ended with max-tokens`：默认预算 8192，截断后最多扩容两次到 32768；只接受完整 JSON 和正常结束，不批准截断输出。
 - 审批问题始终使用中文，包含模型的具体确认问题和本次操作。英文说明按需翻译且保持原决策；翻译失败时显示中文人工核对提示。界面设为英文时也询问中文。
 - 优先选择模型明确支持的 `low` 推理档位；显式配置的档位优先。全部尝试共用总超时，默认 120 秒。
@@ -59,10 +60,27 @@ profile 配置里若残留 `name: dsh-cons-auto-review` 的插件行或覆盖片
 - 普通工具与 PTC 内部工具统一审查；外层 `run_code` 由各内部调用分别接受审查。
 - 子 Agent 默认继承 DCAR，创建时固定继承状态；父 Agent 后续切换模式不会解除已经委派的子 Agent 的审查。
 - 会话统计、规则命中率、程序避免的审查请求数、有限历史、可选 JSONL 日志及轮转；默认不记录工具参数正文。
-- 可选审查缓存，默认关闭；缓存键包含完整授权快照、会话、模型路由与策略，只缓存批准结果。
+- 可选审查缓存，默认关闭；缓存键绑定实际送给审查模型的文本、会话、模型路由与策略，只缓存批准结果。
+- 长会话上下文预算：历史与项目指令各自裁剪并留下显式的 `omitted-context` 说明，**待执行动作永不裁剪**；避免会话变长后每个操作都退回人工授权。
 - 动态权限策略：审查入口激活后才提供 CAutoR 审查；停用时取消等待中的审查并回退已加载会话。已保存的默认设置保留只读守护项。直接复用 Desktop 已有权限服务，无需替换 `permission` 配置行。
 
 CAutoR 的执行策略是 `danger-full-access`。它复用原模式的路径审查逻辑，并以程序检查及 LLM 作为授权入口；不使用原执行沙箱隔离进程。
+
+## 1.2.0 长会话上下文预算
+
+会话变长后，审查输入里的历史事实会持续增长。1.1.0 及更早版本一旦整体超过 `maxInputChars`（默认 180000）就放弃本次审查并退回人工授权——于是**每个**需要审查的操作都要手动确认，而模型根本没有被调用。1.2.0 把长上下文拆成两段独立预算来处理：
+
+```yaml
+review:
+  maxInputChars: 180000            # 总上限（保持）
+  maxHistoryChars: 60000           # FILTERED_HISTORY 段预算，0 = 不设该段上限
+  maxProjectInstructionChars: 30000 # PROJECT_INSTRUCTIONS 段预算，0 = 不设该段上限
+```
+
+- 超预算时**只从最旧的条目开始省略**，并在该段开头插入一条 `omitted-context` 说明（含省略条数、字符数和原因），因此模型知道上下文被缩略过，而不是被静默改写。
+- 省略顺序：先丢 `fact`（工具调用、图片、附件元数据——这些按策略永远不能授权），再丢 `human-instruction` / `direct-parent-instruction` / `checkpoint`。省略只会移除可能存在的授权与约束，不会凭空产生授权，所以结果只会更保守。
+- 审查策略同时明确：被省略的内容不能作为授权，也不能假定被省略的授权、范围或限制存在；若待执行动作的授权只能来自被省略的部分，模型必须询问或拒绝。
+- **待执行动作永不裁剪。** 如果操作自身就超过总上限，审查仍然失败并按 `onError` 处理（绝不批准一份没看全的操作），此时中文说明会指出是动作过大，并建议调大 `maxInputChars` 或减小操作内容。
 
 ## 1.1.0 升级配置
 

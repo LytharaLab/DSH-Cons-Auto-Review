@@ -35,8 +35,18 @@ export function reviewFailureMessage(error, c, trace) {
     return `自动审查达到输出 token 上限，未取得完整结论（最后一次预算 ${trace.lastMaxTokens}，配置上限 ${c.review.maxTokensLimit}，已扩容重试 ${trace.tokenRetries} 次）。`;
   if (error.code === "DCAR_REVIEW_TIMEOUT")
     return `自动审查超时（总时限 ${c.review.timeoutMs} 毫秒，包含排队、重试和中文翻译），未取得完整结论。`;
-  if (error.code === "DCAR_REVIEW_INPUT")
-    return `授权上下文超过 ${c.review.maxInputChars} 字符的配置上限，自动审查未完成。`;
+  if (error.code === "DCAR_REVIEW_INPUT") {
+    const detail = error.detail ?? {};
+    const omitted =
+      (detail.historyEntries ?? 0) + (detail.instructionEntries ?? 0);
+    const abbreviated =
+      omitted > 0 ? `，省略 ${omitted} 条较早的上下文后仍超出` : "";
+    const action =
+      detail.actionChars > 0
+        ? `（本次操作自身占 ${detail.actionChars} 字符）`
+        : "";
+    return `授权上下文超过 ${c.review.maxInputChars} 字符的配置上限${abbreviated}${action}，自动审查未完成。可调大 review.maxInputChars，或减小本次操作的内容。`;
+  }
   if (message === "DCAR review queue is full")
     return "自动审查等待队列已满，未取得审查结论。";
   if (["DCAR_REVIEW_INVALID", "DCAR_REVIEW_STREAM"].includes(error.code))

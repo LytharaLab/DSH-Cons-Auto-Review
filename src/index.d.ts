@@ -54,6 +54,8 @@ export interface DCARConfig {
     onDeny: "ask" | "deny";
     policyAppend: string;
     maxInputChars: number;
+    maxHistoryChars: number;
+    maxProjectInstructionChars: number;
     allowAsk: boolean;
   };
   cache: { enabled: boolean; ttlMs: number; maxEntries: number };

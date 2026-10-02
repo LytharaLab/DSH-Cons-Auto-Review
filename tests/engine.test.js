@@ -153,15 +153,78 @@ test("exact-snapshot cache includes session, authority and route and can be clea
   await f.e.review(f.exec("unknown", {}));
   assert.equal(f.requests.length, 4);
 });
-test("oversized authorization context is not silently truncated", async (t) => {
+test("a long history is abbreviated instead of failing every review", async (t) => {
   const f = await setup(t, {
-    review: { maxInputChars: 1024, onError: "deny" },
+    review: { maxInputChars: 4096, onError: "deny" },
   });
   f.e.snapshot = (_, x) => ({
     ...f.snapshot(_, x),
-    history: [{ text: "x".repeat(2000) }],
+    projectInstructions: [
+      {
+        kind: "user-message",
+        role: "constraint",
+        content: [{ type: "text", text: "PROJECT-CONSTRAINT" }],
+      },
+    ],
+    history: [
+      {
+        kind: "tool-call",
+        role: "fact",
+        mode: "native",
+        name: "read",
+        arguments: { file_path: "a", blob: "f".repeat(8000) },
+      },
+      {
+        kind: "user-message",
+        role: "human-instruction",
+        content: [{ type: "text", text: "NEWEST-AUTHORITY" }],
+      },
+    ],
   });
-  assert.equal((await f.e.review(f.exec("unknown", {}))).kind, "deny");
+  assert.equal((await f.e.review(f.exec("unknown", {}))).kind, "allow");
+  assert.equal(f.requests.length, 1);
+  const text = f.requests[0].messages[0].content[0].text;
+  assert.ok(text.length <= 4096, `reviewer input ${text.length} exceeds the cap`);
+  assert.match(text, /omitted-context/);
+  assert.match(text, /NEWEST-AUTHORITY/);
+  assert.match(text, /PROJECT-CONSTRAINT/);
+  assert.match(text, /PENDING_ACTION/);
+  assert.doesNotMatch(text, /ffffffff/);
+});
+test("facts are abbreviated before authority entries", async (t) => {
+  const f = await setup(t, {
+    review: { maxInputChars: 4096, onError: "deny" },
+  });
+  f.e.snapshot = (_, x) => ({
+    ...f.snapshot(_, x),
+    history: [
+      {
+        kind: "user-message",
+        role: "human-instruction",
+        content: [{ type: "text", text: "OLD-AUTHORITY" }],
+      },
+      {
+        kind: "tool-call",
+        role: "fact",
+        mode: "native",
+        name: "read",
+        arguments: { file_path: "a", blob: "f".repeat(8000) },
+      },
+    ],
+  });
+  await f.e.review(f.exec("unknown", {}));
+  const text = f.requests[0].messages[0].content[0].text;
+  assert.match(text, /OLD-AUTHORITY/);
+  assert.doesNotMatch(text, /ffffffff/);
+});
+test("an oversized pending action still fails closed instead of being truncated", async (t) => {
+  const f = await setup(t, {
+    review: { maxInputChars: 2048, onError: "deny" },
+  });
+  const result = await f.e.review(
+    f.exec("unknown", { blob: "y".repeat(4000) }),
+  );
+  assert.equal(result.kind, "deny");
   assert.equal(f.requests.length, 0);
 });
 test("audit file omits file content by default", async (t) => {

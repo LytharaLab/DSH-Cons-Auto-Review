@@ -1,6 +1,6 @@
 {
   "name": "@lytharalab/dsh-cons-auto-review",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Con's 自动审查（DCAR）：确定性规则优先、LLM 按需升级的 DeepSeek Harness 工具审查插件，提供 CAutoR 权限模式。Deterministic-first auto review for DeepSeek Harness.",
   "type": "module",
   "main": "./src/index.js",

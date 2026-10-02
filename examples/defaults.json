@@ -95,6 +95,8 @@
     "onDeny": "ask",
     "policyAppend": "",
     "maxInputChars": 180000,
+    "maxHistoryChars": 60000,
+    "maxProjectInstructionChars": 30000,
     "allowAsk": true
   },
   "cache": {

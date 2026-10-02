@@ -1,3 +1,12 @@
+# 1.2.0
+
+- 修复长会话下「授权上下文超过 180000 字符的配置上限，自动审查未完成」导致**每个**需要审查的操作都退回人工授权的问题：会话变长后历史会持续增长，此前一旦整体超限就直接放弃审查，模型根本没有被调用。现在历史与项目指令各自有独立字符预算，超出时从最旧条目开始省略，并在审查输入里留下 `omitted-context` 说明——模型可见，不是静默截断。
+- 裁剪顺序为先 `fact`（工具调用、图片、附件元数据等按策略永远不能授权的内容），再 `human-instruction` / `direct-parent-instruction` / `checkpoint`；省略只会移除可能存在的授权与约束，绝不产生授权，降级方向始终偏向询问或拒绝。
+- 审查策略新增一条：`omitted-context` 是尺寸说明而不是上下文，被省略的授权、范围或限制不得假定存在；待执行动作的授权若只能来自被省略的部分，必须询问或拒绝，不得批准。
+- **待执行动作 `PENDING_ACTION` 永不裁剪**：动作本身超过总上限时仍然失败并按 `onError` 处理，此时中文说明会指出是动作过大，并给出可调整的配置项。
+- 新增配置 `review.maxHistoryChars`（默认 60000）与 `review.maxProjectInstructionChars`（默认 30000），`0` 表示该段不设上限、只受总上限约束。
+- 审查缓存键由「原始快照」改为「实际送给模型的文本」，避免裁剪参数变化后复用另一份上下文的批准；审查记录新增 `contextOmitted` 计数，便于观察省略频率。
+
 # 1.1.0
 
 首次公开发布：包名 `@lytharalab/dsh-cons-auto-review`（GitHub：`LytharaLab/DSH-Cons-Auto-Review`），npm 包名、Cordis 条目名与插件导出名保持一致；npm 包只包含运行所需文件，测试与测试记录留在仓库中。此前以本地 `.tgz` 形式使用的旧包名 `dsh-cons-auto-review` 不能直接覆盖升级，需先 `dsh plugin --profile desktop remove dsh-cons-auto-review` 再安装新包，并把 profile 中残留的旧包名改为 `@lytharalab/dsh-cons-auto-review`。

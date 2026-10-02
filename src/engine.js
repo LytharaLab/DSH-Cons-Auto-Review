@@ -2,7 +2,7 @@
 import { deterministic } from "./deterministic.js";
 import {
   snapshotAutoReview,
-  reviewUserText,
+  budgetReviewText,
   readDecision,
   REVIEW_POLICY,
   chineseReviewPolicy,
@@ -45,6 +45,7 @@ export class ReviewEngine {
       reviewAttempts: 0,
       tokenRetries: 0,
       translationAttempts: 0,
+      contextOmitted: 0,
       lastMaxTokens: 0,
     };
     let displayReason;
@@ -86,12 +87,25 @@ export class ReviewEngine {
             reviewSignal,
           );
           const snapshot = this.snapshot(exec.agent, exec);
-          const text = reviewUserText(snapshot);
-          if (text.length > c.review.maxInputChars)
-            throw new ReviewResponseError(
+          const budgeted = budgetReviewText(snapshot, c.review);
+          const text = budgeted.text;
+          trace.contextOmitted =
+            budgeted.omitted.historyEntries +
+            budgeted.omitted.instructionEntries;
+          if (text.length > budgeted.limit) {
+            // The action is never abbreviated, so an oversized action fails closed.
+            const error = new ReviewResponseError(
               "DCAR_REVIEW_INPUT",
-              "DCAR review input exceeds maxInputChars; no authorization context was truncated",
+              `DCAR review input is ${text.length} characters, over the ${budgeted.limit} maxInputChars limit after abbreviating history; the pending action alone is ${budgeted.sizes.action} characters`,
             );
+            error.detail = {
+              chars: text.length,
+              limit: budgeted.limit,
+              actionChars: budgeted.sizes.action,
+              ...budgeted.omitted,
+            };
+            throw error;
+          }
           const options = {
             provider: c.review.provider || snapshot.provider,
             model: c.review.model || snapshot.model,
@@ -126,10 +140,10 @@ export class ReviewEngine {
             if (info.reasoning?.efforts.some((effort) => effort.id === "low"))
               options.reasoningEffort = "low";
           }
-          // Include the entire authorization snapshot and current policy: no tool-name/prefix grants.
+          // Bind the cache to the exact text the reviewer saw, so context abbreviation cannot reuse a stale approval.
           const key = hash({
             session: exec.agent.session.id,
-            snapshot,
+            input: text,
             route: { provider: options.provider, model: options.model },
             policy: options.system,
             reasoning: options.reasoningEffort,
