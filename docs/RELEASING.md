@@ -29,8 +29,11 @@
    npm trust github @lytharalab/dsh-cons-auto-review \
      --repo LytharaLab/DSH-Cons-Auto-Review \
      --file publish.yml \
-     --allow-publish -y
+     --allow-publish -y \
+     --registry=https://registry.npmjs.org/
    ```
+
+   **`--registry` 必须显式指定。** `npm publish` 有 `publishConfig.registry` 兜底，`npm trust` 没有：它会用本机配置的 registry，若本机默认指向镜像（例如 `registry.npmmirror.com`），请求会打到 `/-/package/<name>/trust` 而得到 `E404`，报错信息里只提 404，看不出是 registry 走错了。
 
    也可在网页上配置：包的 Settings → **Trusted Publisher**，填 Organization or user = `LytharaLab`、Repository = `DSH-Cons-Auto-Review`、Workflow filename = `publish.yml`、Environment 留空。
 
