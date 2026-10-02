@@ -19,21 +19,24 @@
 
    `package.json` 的 `publishConfig` 已经固定 `registry` 与 `access`，所以即使本机默认 registry 指向镜像也不会发错地方；`prepublishOnly` 会在真正上传前跑一次 `npm run verify`。
 
+   这一次发布不经过 CI，因此**不带 provenance**；从下一个版本起由工作流发布，都会附带来来源证明。已手工发布过的版本不能再由 CI 重复发布（registry 认为版本已存在），标签推送从新版本号开始。
+
    > npm 已停止签发经典 publish token（2025-11-05 起创建被禁用，存量 token 于 2025-12 前后被吊销）。不要再用 `NPM_TOKEN` 这类长期令牌，改用下面的 Trusted Publishing。
 
-3. **配置 Trusted Publishing（OIDC）**：打开包的 Settings → **Trusted Publisher**（新包也可以从 <https://www.npmjs.com/settings/lytharalab/packages> 进入），添加 GitHub Actions：
+3. **配置 Trusted Publishing（OIDC）**：包必须已经存在于 registry，`npm trust` 才能给它配置信任关系（npm 文档明确写了 "Package must exist"），所以首次发布只能手工完成。之后用 CLI 配置，比网页点选更不容易写错：
 
-   | 字段 | 值 |
-   |---|---|
-   | Organization or user | `LytharaLab` |
-   | Repository | `DSH-Cons-Auto-Review` |
-   | Workflow filename | `publish.yml` |
-   | Environment | 留空（workflow 里也没有 environment） |
+   ```bash
+   npm trust github @lytharalab/dsh-cons-auto-review \
+     --repo LytharaLab/DSH-Cons-Auto-Review \
+     --file publish.yml \
+     --allow-publish -y
+   ```
 
-   这三项必须与 `.github/workflows/publish.yml` 完全一致：npm 只在发布那一刻校验，不匹配时只会给出 `404` 或 `ENEEDAUTH`，看不出是哪一项错了。配置完成后就不需要任何 secret。
+   也可在网页上配置：包的 Settings → **Trusted Publisher**，填 Organization or user = `LytharaLab`、Repository = `DSH-Cons-Auto-Review`、Workflow filename = `publish.yml`、Environment 留空。
 
-   > 若 npm 界面允许为「尚未发布过的包名」预先添加 trusted publisher，可以跳过第 2 步，直接由标签推送完成首次发布。
-   > OIDC 需要 npm ≥ 11.5.1（随 Node ≥ 22.14.0 提供）；工作流固定用 Node 24，满足要求。另外不要在发布步骤里设置空的 `NODE_AUTH_TOKEN`——它会让 npm 退回 token 认证而不再走 OIDC。
+   这几项必须与 `.github/workflows/publish.yml` 完全一致：npm 只在发布那一刻校验，不匹配时只会给出 `404` 或 `ENEEDAUTH`，看不出是哪一项错了。配置完成后就不需要任何 secret。可用 `npm trust list @lytharalab/dsh-cons-auto-review` 核对，用 `npm trust revoke --id <id>` 撤销。
+
+   > `npm trust` 要求 npm ≥ 11.15.0、账号开启 2FA，且不支持带 bypass 2FA 的 Granular Access Token——请用交互式 `npm login` 登录，不要贴 token。OIDC 发布本身需要 npm ≥ 11.5.1（随 Node ≥ 22.14.0 提供）；工作流固定用 Node 24，满足要求。另外不要在发布步骤里设置空的 `NODE_AUTH_TOKEN`——它会让 npm 退回 token 认证而不再走 OIDC。
 
 ## 每次发版
 
