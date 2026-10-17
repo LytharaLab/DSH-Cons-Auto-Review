@@ -1,0 +1,181 @@
+[
+  {
+    "id": "@lytharalab/dsh-cons-auto-review@1.2.1",
+    "name": "@lytharalab/dsh-cons-auto-review",
+    "version": "1.2.1",
+    "size": 53203,
+    "unpackedSize": 157299,
+    "shasum": "b0601c243e57b3e5b73e396be75e00a13c2a912d",
+    "integrity": "sha512-EVc03qsMNbyH4YEb9Hws7XoXFsTBCGePkYZDGVg/L5pJNUyp1z5g30nLBbWyHZUmvMrA8eeXvlozhwxxfI+cFQ==",
+    "filename": "lytharalab-dsh-cons-auto-review-1.2.1.tgz",
+    "files": [
+      {
+        "path": "CHANGELOG.md",
+        "size": 5615,
+        "mode": 420
+      },
+      {
+        "path": "LICENSE",
+        "size": 1127,
+        "mode": 420
+      },
+      {
+        "path": "README.md",
+        "size": 12131,
+        "mode": 420
+      },
+      {
+        "path": "THIRD_PARTY_LICENSE.txt",
+        "size": 1065,
+        "mode": 420
+      },
+      {
+        "path": "THIRD_PARTY_NOTICES.md",
+        "size": 1532,
+        "mode": 420
+      },
+      {
+        "path": "cordis.patch.yml",
+        "size": 176,
+        "mode": 420
+      },
+      {
+        "path": "docs/COMPATIBILITY.md",
+        "size": 6695,
+        "mode": 420
+      },
+      {
+        "path": "docs/CONFIGURATION.md",
+        "size": 14112,
+        "mode": 420
+      },
+      {
+        "path": "docs/RELEASING.md",
+        "size": 6437,
+        "mode": 420
+      },
+      {
+        "path": "examples/defaults.json",
+        "size": 2365,
+        "mode": 420
+      },
+      {
+        "path": "examples/desktop-config.patch.yml",
+        "size": 719,
+        "mode": 420
+      },
+      {
+        "path": "examples/separate-review-model.patch.yml",
+        "size": 366,
+        "mode": 420
+      },
+      {
+        "path": "examples/strict.patch.yml",
+        "size": 264,
+        "mode": 420
+      },
+      {
+        "path": "icon.svg",
+        "size": 320,
+        "mode": 420
+      },
+      {
+        "path": "locale/en.json",
+        "size": 134,
+        "mode": 420
+      },
+      {
+        "path": "locale/zh.json",
+        "size": 160,
+        "mode": 420
+      },
+      {
+        "path": "package.json",
+        "size": 3546,
+        "mode": 420
+      },
+      {
+        "path": "src/async.js",
+        "size": 1943,
+        "mode": 420
+      },
+      {
+        "path": "src/audit.js",
+        "size": 3843,
+        "mode": 420
+      },
+      {
+        "path": "src/config.js",
+        "size": 7482,
+        "mode": 420
+      },
+      {
+        "path": "src/containment.js",
+        "size": 1625,
+        "mode": 420
+      },
+      {
+        "path": "src/deterministic.js",
+        "size": 2636,
+        "mode": 420
+      },
+      {
+        "path": "src/engine.js",
+        "size": 13051,
+        "mode": 420
+      },
+      {
+        "path": "src/index.d.ts",
+        "size": 3201,
+        "mode": 420
+      },
+      {
+        "path": "src/index.js",
+        "size": 15767,
+        "mode": 420
+      },
+      {
+        "path": "src/paths.js",
+        "size": 3756,
+        "mode": 420
+      },
+      {
+        "path": "src/permission-adapter.js",
+        "size": 3322,
+        "mode": 420
+      },
+      {
+        "path": "src/permission-presets.js",
+        "size": 2880,
+        "mode": 420
+      },
+      {
+        "path": "src/presentation.js",
+        "size": 2796,
+        "mode": 420
+      },
+      {
+        "path": "src/preset-defaults.js",
+        "size": 4108,
+        "mode": 420
+      },
+      {
+        "path": "src/shell.js",
+        "size": 6386,
+        "mode": 420
+      },
+      {
+        "path": "src/upstream-reviewer.js",
+        "size": 26692,
+        "mode": 420
+      },
+      {
+        "path": "src/working-directory.js",
+        "size": 1047,
+        "mode": 420
+      }
+    ],
+    "entryCount": 33,
+    "bundled": []
+  }
+]

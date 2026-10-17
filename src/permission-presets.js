@@ -1,5 +1,5 @@
 /**
- * DSH 0.1.7-rc.2 / 0.2.0-rc.2 permission service adapter.
+ * Permission service adapter for the DSH releases listed in docs/COMPATIBILITY.md.
  * Adds effect-scoped review presets without changing DSH's built-in knob setters,
  * /permission command, session projection, catalog Remote, or official Auto integration.
  */
@@ -13,7 +13,7 @@ export default class DCARPermissionPresetService extends PermissionPresetService
     for (const method of ["specOf", "derive", "apply", "emitCatalogChanged"])
       if (typeof PermissionPresetService.prototype[method] !== "function")
         throw new Error(
-          `DCAR permission adapter requires DSH 0.1.7-rc.2 or 0.2.0-rc.2 (${method} is unavailable)`,
+          `DCAR 所需的 DSH 权限服务接口 ${method} 不可用，无法启用自动审查；请参阅 docs/COMPATIBILITY.md`,
         );
     super(ctx, config);
     this.dcarReviewPresets = new Map();

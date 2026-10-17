@@ -8,6 +8,44 @@ import { deterministic } from "../src/deterministic.js";
 import { literalArgv } from "../src/shell.js";
 import { protectedPath } from "../src/paths.js";
 const c = resolveConfig({ rules: { includeTempRoots: false } });
+test("changed cwd resolves file, search, custom and shell targets without moving writable roots", async (t) => {
+  const f = await fixture();
+  t.after(() => rm(f.root, { recursive: true, force: true }));
+  const nested = join(f.cwd, "nested");
+  await mkdir(nested);
+  let cwd = nested;
+  f.ctx.workingDirectory = { ensure: async () => cwd };
+  const config = patchConfig(c, { rules: {
+    allowOutsideReads: false,
+    customTools: [{ name: "custom-write", effect: "write", pathFields: ["target"] }],
+    additionalWritableRoots: ["cache"],
+  } });
+  for (const [name, args] of [
+    ["write", { file_path: "local.txt" }],
+    ["read", { file_path: "local.txt" }],
+    ["glob", { pattern: "**/*.txt" }],
+    ["custom-write", { target: "local.txt" }],
+    ["bash", { command: "touch local.txt" }],
+    ["bash", { command: "cat local.txt" }],
+    ["pwsh", { command: "Get-Content local.txt" }],
+    ["bash", { command: "touch local.txt", workdir: ".." }],
+  ]) assert.equal((await deterministic(f.exec(name, args), f.ctx, config)).kind, "allow", name);
+  // Protection must follow the actual current directory, not the header.
+  cwd = join(f.cwd, ".git");
+  assert.equal((await deterministic(f.exec("write", { file_path: "config" }), f.ctx, config)).code, "PROTECTED_PATH");
+  cwd = f.outside;
+  for (const [name, args] of [
+    ["write", { file_path: "local.txt" }],
+    ["read", { file_path: "local.txt" }],
+    ["glob", { pattern: "**/*.txt" }],
+    ["custom-write", { target: "local.txt" }],
+    ["bash", { command: "touch local.txt" }],
+    ["pwsh", { command: "Get-Content local.txt" }],
+    ["bash", { command: "cat local.txt", workdir: "." }],
+    ["write", { file_path: "cache/local.txt" }],
+  ]) assert.equal((await deterministic(f.exec(name, args), f.ctx, config)).code, "OUTSIDE_WORKSPACE", name);
+  assert.equal((await deterministic(f.exec("write", { file_path: join(f.cwd, "local.txt") }), f.ctx, config)).kind, "allow");
+});
 test("configuration merges, freezes and validates all security fields", () => {
   const config = resolveConfig({
     review: { model: "custom", provider: "p" },

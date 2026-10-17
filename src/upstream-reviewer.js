@@ -221,7 +221,7 @@ function ptcAction(exec, start, visibleParentKeys) {
     arguments: exec.arguments,
   };
 }
-function snapshotAutoReview(agent, exec) {
+function snapshotAutoReview(agent, exec, cwd = agent.session.header.cwd) {
   const { session } = agent;
   const events = session.snapshotEvents();
   const nodes = [...session.surface.nodes];
@@ -235,7 +235,6 @@ function snapshotAutoReview(agent, exec) {
       "auto-review: no complete request-header route is available",
     );
   }
-  const cwd = session.header.cwd;
   if (cwd === void 0 || cwd.length === 0) {
     throw new Error("auto-review: the session has no working directory");
   }

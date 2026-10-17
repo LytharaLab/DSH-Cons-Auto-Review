@@ -1,5 +1,6 @@
-/** DCAR 1.1.0: CAutoR permission preset and deterministic-first tool gate. */
+/** CAutoR permission preset and deterministic-first tool gate. */
 import z from "@deepseek-ai/schemastery";
+import pkg from "../package.json" with { type: "json" };
 import { DEFAULTS, resolveConfig, patchConfig } from "./config.js";
 import { ReviewEngine } from "./engine.js";
 import { attachPermissionAdapter } from "./permission-adapter.js";
@@ -359,7 +360,7 @@ export function apply(ctx, input = {}) {
                 if (cmd === "" || cmd === "status")
                   return {
                     kind: "success",
-                    text: `DCAR 1.1.0 | 当前权限：${presets.current(session)} | CAutoR 审查：${selected(session) || inherited.has(session) ? "启用" : "未启用"}\n/dcar on · off · stats · history · config · reset · clear-cache · check`,
+                    text: `DCAR ${pkg.version} | 当前权限：${presets.current(session)} | CAutoR 审查：${selected(session) || inherited.has(session) ? "启用" : "未启用"}\n/dcar on · off · stats · history · config · reset · clear-cache · check`,
                   };
                 return {
                   kind: "error",

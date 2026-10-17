@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         node: ['22', '24']
-        dsh: ['0.1.7-rc.2', '0.2.0-rc.2']
+        dsh: ['0.1.7-rc.2', '0.2.0-rc.2', '0.2.1-rc.2']
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -39,6 +39,8 @@ jobs:
           const p = JSON.parse(readFileSync('package.json', 'utf8'));
           const packages = Object.keys(p.devDependencies)
             .filter(name => name.startsWith('@deepseek-ai/dsh-'))
+            // This optional test service does not exist in the older releases.
+            .filter(name => name !== '@deepseek-ai/dsh-working-directory' || process.env.DSH_TEST_VERSION === '0.2.1-rc.2')
             .map(name => `${name}@${process.env.DSH_TEST_VERSION}`);
           execFileSync('npm', ['install', '--no-save', '--package-lock=false', '--legacy-peer-deps', ...packages], { stdio: 'inherit' });
           JS
@@ -70,6 +72,7 @@ jobs:
             'icon.svg',
             'src/index.js',
             'src/index.d.ts',
+            'src/working-directory.js',
             'src/permission-presets.js',
             'locale/zh.json',
             'locale/en.json',

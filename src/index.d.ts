@@ -91,7 +91,7 @@ export class ReviewEngine {
   );
   review(
     exec: {
-      agent: { session: { id: string; header: { cwd: string } } };
+      agent: { session: { id: string; header: { cwd?: string } } };
       name: string;
       arguments: unknown;
       callId: string;

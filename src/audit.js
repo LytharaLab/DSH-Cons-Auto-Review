@@ -32,7 +32,7 @@ export class Audit {
   request(id) {
     this.state(id).llmRequests++;
   }
-  record(exec, event, c) {
+  record(exec, event, c, workspaceRoot = exec.agent.session.header.cwd) {
     const id = String(exec.agent.session.id),
       s = this.state(id);
     s.total++;
@@ -74,10 +74,9 @@ export class Audit {
     if (s.history.length > c.audit.historyLimit)
       s.history.splice(0, s.history.length - c.audit.historyLimit);
     if (c.audit.file) {
-      const cwd = exec.agent.session.header.cwd;
       const file = isAbsolute(c.audit.file)
         ? c.audit.file
-        : resolve(cwd, c.audit.file);
+        : resolve(workspaceRoot, c.audit.file);
       this.tail = this.tail
         .then(async () => {
           await mkdir(dirname(file), { recursive: true });

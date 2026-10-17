@@ -8,3 +8,5 @@ This project includes adapted code from [DeepSeek Harness](https://github.com/de
 - `src/permission-presets.js`: subclasses the host DSH permission service, adding effect-scoped custom review presets and an absent-provider guard; the upstream base implementation stays in the host's installed package.
 
 The project's npm peer and development dependencies keep their own license terms. No dependency source or `node_modules` is included in the project ZIP or npm package.
+
+DCAR 1.2.1 also follows the working-directory snapshot change in [DeepSeek Harness 687f282e8625c6b8d11ff58211a90524be2e4317](https://github.com/deepseek-ai/deepseek-harness/tree/687f282e8625c6b8d11ff58211a90524be2e4317), under the same MIT License.

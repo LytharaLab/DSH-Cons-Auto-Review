@@ -1,5 +1,6 @@
 /** Deterministic-first authorization, configurable LLM fallback, and audit. */
 import { deterministic } from "./deterministic.js";
+import { executionDirectories, workspaceDirectory } from "./working-directory.js";
 import {
   snapshotAutoReview,
   budgetReviewText,
@@ -86,7 +87,10 @@ export class ReviewEngine {
             c.review.maxQueued,
             reviewSignal,
           );
-          const snapshot = this.snapshot(exec.agent, exec);
+          const { cwd } = await abortable(
+            executionDirectories(exec, this.ctx, reviewSignal), reviewSignal,
+          );
+          const snapshot = this.snapshot(exec.agent, exec, cwd);
           const budgeted = budgetReviewText(snapshot, c.review);
           const text = budgeted.text;
           trace.contextOmitted =
@@ -286,6 +290,7 @@ export class ReviewEngine {
         displayReason,
       },
       c,
+      workspaceDirectory(exec, this.ctx),
     );
     return result;
   }

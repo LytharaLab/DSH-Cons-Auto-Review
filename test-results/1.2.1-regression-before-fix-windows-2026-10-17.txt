@@ -1,0 +1,70 @@
+✖ real directory changes keep local writes model-free and reject external relative writes (925.3171ms)
+✖ real reviewer environment follows cwd and directory notices remain facts (16.0987ms)
+✖ changed cwd resolves file, search, custom and shell targets without moving writable roots (12.5932ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1250.0862
+
+✖ failing tests:
+
+test at tests\integration.test.js:189:1
+✖ real directory changes keep local writes model-free and reject external relative writes (925.3171ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  false !== true
+
+      at TestContext.<anonymous> (<workspace>/tests/integration.test.js:203:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\integration.test.js:229:1
+✖ real reviewer environment follows cwd and directory notices remain facts (16.0987ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+
+    {
+  +   cwd: '<test-root>/workspace'
+  -   cwd: '<test-root>/outside'
+    }
+
+      at TestContext.<anonymous> (<workspace>/tests/integration.test.js:237:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { cwd: '<test-root>/workspace' },
+    expected: { cwd: '<test-root>/outside' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\rules.test.js:11:1
+✖ changed cwd resolves file, search, custom and shell targets without moving writable roots (12.5932ms)
+  AssertionError [ERR_ASSERTION]: bash
+  + actual - expected
+
+  + 'escalate'
+  - 'allow'
+
+      at TestContext.<anonymous> (<workspace>/tests/rules.test.js:32:13)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'escalate',
+    expected: 'allow',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -27,6 +27,33 @@ test("safe local work performs zero model calls", async (t) => {
   assert.equal(f.requests.length, 0);
   assert.equal(f.e.audit.stats(f.session.id).savedReviewRequests, 20);
 });
+
+test("unavailable or malformed working-directory service cannot authorize an action", async (t) => {
+  const f = await setup(t, { review: { onError: "deny" } });
+  for (const service of [
+    { ensure: async () => { throw new Error("directory unavailable"); } },
+    { ensure: async () => "relative/path" },
+    {},
+  ]) {
+    f.ctx.workingDirectory = service;
+    assert.equal((await f.e.review(f.exec("write", { file_path: "local.txt" }))).kind, "deny");
+  }
+  assert.equal(f.requests.length, 0);
+});
+
+test("relative audit logs stay in the original workspace or the host fallback", async (t) => {
+  const f = await setup(t, { audit: { file: ".dcar/audit.jsonl" } });
+  f.ctx.workingDirectory = { ensure: async () => f.outside, defaultDirectory: f.cwd };
+  await f.e.review(f.exec("write", { file_path: `${f.cwd}/local.txt` }));
+  delete f.session.header.cwd;
+  await f.e.review(f.exec("write", { file_path: `${f.cwd}/local.txt` }));
+  await f.e.audit.flush();
+  const lines = (await readFile(`${f.cwd}/.dcar/audit.jsonl`, "utf8")).trim().split("\n");
+  assert.equal(lines.length, 2);
+  assert.ok(lines.every((line) => JSON.parse(line).decision === "allow"));
+  await assert.rejects(readFile(`${f.outside}/.dcar/audit.jsonl`), { code: "ENOENT" });
+  assert.equal(f.requests.length, 0);
+});
 test("unknown action makes one model request with policy, human source and exact arguments", async (t) => {
   const f = await setup(t);
   assert.equal(

@@ -38,17 +38,17 @@ export function protectedPath(path, config) {
   );
 }
 /** Check every path, including aliases and missing targets, without changing sandbox policy. */
-export async function checkPaths(paths, effect, cwd, ctx, config, signal) {
+export async function checkPaths(paths, effect, cwd, ctx, config, signal, workspaceRoot = cwd) {
   if (!paths.length)
     return escalate("INVALID_PATH", "No target paths supplied");
-  if (!isAbsolute(cwd))
+  if (!isAbsolute(cwd) || !isAbsolute(workspaceRoot))
     return escalate("WORKSPACE_UNAVAILABLE", "No absolute session workspace");
   const roots = config.rules.includeTempRoots
-    ? writableRoots({ mode: "workspace-write", workspaceRoot: cwd })
-    : [cwd];
+    ? writableRoots({ mode: "workspace-write", workspaceRoot })
+    : [workspaceRoot];
   roots.push(
     ...config.rules.additionalWritableRoots.map((p) =>
-      isAbsolute(p) ? p : resolve(cwd, p),
+      isAbsolute(p) ? p : resolve(workspaceRoot, p),
     ),
   );
   for (const path of paths) {

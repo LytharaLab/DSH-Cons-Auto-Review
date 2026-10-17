@@ -24,7 +24,7 @@ export function attachPermissionAdapter(service) {
   if (typeof names !== "function" ||
       Object.values(original).some((method) => typeof method !== "function") ||
       typeof service.emitCatalogChanged !== "function")
-    throw new Error("DCAR requires the DSH 0.1.7-rc.2 / 0.2.0-rc.2 permission service runtime APIs");
+    throw new Error("DCAR 所需的 DSH 权限服务接口不可用，无法启用自动审查；请参阅 docs/COMPATIBILITY.md");
   if (!Object.isExtensible(service) || [...own.values()].some((d) => d && !d.configurable))
     throw new Error("DCAR cannot extend this permission service instance");
   const entries = new Map();

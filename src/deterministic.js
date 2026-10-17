@@ -1,6 +1,7 @@
 /** Layer one: a positive authorization rule or escalation; never a final deny. */
 import { checkPaths, allow, escalate } from "./paths.js";
 import { checkShell } from "./shell.js";
+import { executionDirectories } from "./working-directory.js";
 function field(a, path) {
   return path
     .split(".")
@@ -28,18 +29,18 @@ export async function deterministic(exec, ctx, c, signal = exec.signal) {
     return escalate("INVALID_ARGUMENTS", "Expected object arguments");
   if (c.shell.tools.includes(name)) return checkShell(exec, ctx, c, signal);
   const custom = c.rules.customTools.find((r) => r.name === name);
-  const cwd = exec.agent.session.header.cwd;
+  const { cwd, workspaceRoot } = await executionDirectories(exec, ctx, signal);
   if (custom) {
     const paths = custom.pathFields.flatMap((p) => {
       const v = field(a, p);
       return Array.isArray(v) ? v : [v];
     });
-    return checkPaths(paths, custom.effect, cwd, ctx, c, signal);
+    return checkPaths(paths, custom.effect, cwd, ctx, c, signal, workspaceRoot);
   }
   if (c.rules.readTools.includes(name))
-    return checkPaths([a.file_path], "read", cwd, ctx, c, signal);
+    return checkPaths([a.file_path], "read", cwd, ctx, c, signal, workspaceRoot);
   if (c.rules.writeTools.includes(name))
-    return checkPaths([a.file_path], "write", cwd, ctx, c, signal);
+    return checkPaths([a.file_path], "write", cwd, ctx, c, signal, workspaceRoot);
   if (c.rules.searchTools.includes(name)) {
     const path = a.path ?? a.cwd ?? cwd;
     // An absolute/traversing glob can search beyond its supplied root; do not approve it by its cwd.
@@ -49,7 +50,7 @@ export async function deterministic(exec, ctx, c, signal = exec.signal) {
         /(^|[\\/])\.\.([\\/]|$)|^[\\/]|^[a-z]:/i.test(a.pattern))
     )
       return escalate("SEARCH_SCOPE", "Search pattern needs review");
-    return checkPaths([path], "read", cwd, ctx, c, signal);
+    return checkPaths([path], "read", cwd, ctx, c, signal, workspaceRoot);
   }
   return escalate(
     "UNKNOWN_TOOL",

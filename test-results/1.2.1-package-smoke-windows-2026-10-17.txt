@@ -1,0 +1,9 @@
+DCAR 1.2.1 package smoke: PASS
+33 packaged files match workspace SHA256 hashes.
+6 public specifiers resolve from the extracted package.
+Extracted entry imports and default Cordis schema resolves with installed DSH 0.2.1-rc.2 dependencies.
+Publishable file boundary checked.
+All lockfile download URLs use registry.npmjs.org.
+Tarball: lytharalab-dsh-cons-auto-review-1.2.1.tgz
+Integrity: sha512-EVc03qsMNbyH4YEb9Hws7XoXFsTBCGePkYZDGVg/L5pJNUyp1z5g30nLBbWyHZUmvMrA8eeXvlozhwxxfI+cFQ==
+No profile installation, Git push, tag or npm publish performed.

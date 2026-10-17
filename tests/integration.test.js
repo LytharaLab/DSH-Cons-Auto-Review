@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { rm, readFile, writeFile } from "node:fs/promises";
+import { rm, readFile, writeFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { Context } from "@deepseek-ai/cordis";
 import SessionStore, { SessionId } from "@deepseek-ai/dsh-session";
 import Projection from "@deepseek-ai/dsh-session-projection";
@@ -23,6 +24,10 @@ import * as Plugin from "../src/index.js";
 import { fixture, chunks } from "./helpers.js";
 import { parse } from "yaml";
 import { DORMANT_PRESET } from "../src/preset-defaults.js";
+// The service first appeared in 0.2.1; old-version matrix runs do not load it.
+const WorkingDirectory = ToolFS.inject.includes("workingDirectory")
+  ? (await import("@deepseek-ai/dsh-working-directory")).default
+  : undefined;
 class Adapter extends LlmAdapter {
   requests = [];
   text = '{"risk":"low","decision":"allow"}';
@@ -41,6 +46,7 @@ async function mounted(t, options = {}) {
   await ctx.plugin(ToolRuntime);
   await ctx.plugin(LlmRuntime);
   await ctx.plugin(LocalFS, { cwd: f.cwd });
+  if (WorkingDirectory) await ctx.plugin(WorkingDirectory, { defaultDirectory: f.cwd });
   await ctx.plugin(ToolFS);
   ctx.provide("shell", { sandboxMode: "workspace-write" });
   await ctx.plugin(Approval, { policy: "ask" });
@@ -98,6 +104,8 @@ async function mounted(t, options = {}) {
       meta: { cwd: f.cwd },
     }),
     agent = {
+      ctx,
+      inject() {},
       id: session.id,
       session,
       options: { provider: "test", model: "fake" },
@@ -178,6 +186,59 @@ function probe(ctx, name = "probe") {
   });
   return () => runs;
 }
+test("real directory changes keep local writes model-free and reject external relative writes", { skip: !WorkingDirectory }, async (t) => {
+  const f = await mounted(t);
+  const nested = join(f.cwd, "nested");
+  await mkdir(nested);
+  f.ctx.permissionPresets.set(f.session, "CAutoR");
+  await f.ctx.workingDirectory.set(f.agent, nested);
+  assert.equal((await f.run("write", { file_path: "local.txt", content: "nested" })).isError, false);
+  assert.equal(await readFile(join(nested, "local.txt"), "utf8"), "nested");
+  assert.equal((await f.run("read", { file_path: "local.txt" })).isError, false);
+  assert.equal(f.adapter.requests.length, 0);
+  assert.equal(f.session.header.cwd, f.cwd);
+
+  await f.ctx.workingDirectory.set(f.agent, f.outside);
+  f.adapter.text = '{"risk":"high","decision":"deny","reason":"禁止本次外部写入"}';
+  assert.equal((await f.run("write", { file_path: "external.txt", content: "blocked" })).isError, true);
+  await assert.rejects(readFile(join(f.outside, "external.txt")), { code: "ENOENT" });
+  assert.equal(f.adapter.requests.length, 1);
+  const text = f.adapter.requests[0].messages[0].content[0].text;
+  assert.deepEqual(JSON.parse(text.split("\n\n")[1]), { cwd: f.outside });
+});
+
+test("real missing cwd recovery and headerless sessions use the host directory", { skip: !WorkingDirectory }, async (t) => {
+  const f = await mounted(t);
+  const nested = join(f.cwd, "removed");
+  await mkdir(nested);
+  f.ctx.permissionPresets.set(f.session, "CAutoR");
+  await f.ctx.workingDirectory.set(f.agent, nested);
+  await rm(nested, { recursive: true });
+  assert.equal((await f.run("write", { file_path: "recovered.txt", content: "restored" })).isError, false);
+  assert.equal(await readFile(join(f.cwd, "recovered.txt"), "utf8"), "restored");
+  assert.equal(f.ctx.workingDirectory.get(f.session), f.cwd);
+
+  const session = f.ctx.sessions.create(SessionId("headerless"));
+  const agent = { ...f.agent, id: session.id, session };
+  f.ctx.permissionPresets.set(session, "CAutoR");
+  assert.equal((await f.run("write", { file_path: "fallback.txt", content: "default" }, agent)).isError, false);
+  assert.equal(await readFile(join(f.cwd, "fallback.txt"), "utf8"), "default");
+  assert.equal(f.adapter.requests.length, 0);
+});
+
+test("real reviewer environment follows cwd and directory notices remain facts", { skip: !WorkingDirectory }, async (t) => {
+  const f = await mounted(t);
+  probe(f.ctx);
+  f.agent.inject = (message) => f.session.append("user/message", message, { surfaceOp: "append" });
+  f.ctx.permissionPresets.set(f.session, "CAutoR");
+  await f.ctx.workingDirectory.set(f.agent, f.outside);
+  assert.equal((await f.run("probe", {})).isError, false);
+  const sections = f.adapter.requests[0].messages[0].content[0].text.split("\n\n");
+  assert.deepEqual(JSON.parse(sections[1]), { cwd: f.outside });
+  const notices = JSON.parse(sections[5]).filter((entry) => entry.source?.kind === "working-directory");
+  assert.equal(notices.length, 1);
+  assert.equal(notices[0].role, "fact");
+});
 test("real LLM and tool services recover max-tokens before executing once", async (t) => {
   const f = await mounted(t, { config: { review: { retryDelayMs: 0 } } });
   const count = probe(f.ctx);

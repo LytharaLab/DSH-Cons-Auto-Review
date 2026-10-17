@@ -1,5 +1,6 @@
 /** Conservative command grammar for unconfined execution. Unrecognized syntax escalates. */
 import { checkPaths, allow, escalate } from "./paths.js";
+import { executionDirectories } from "./working-directory.js";
 /** Parse literal argv only; never evaluate a command or use a prefix permission match. */
 export function literalArgv(command) {
   if (
@@ -61,9 +62,9 @@ export async function checkShell(exec, ctx, c, signal) {
       "Expansion, compound syntax or scripts require LLM review",
     );
   const [exe, ...args] = argv;
-  const cwd = exec.agent.session.header.cwd;
+  const { cwd, workspaceRoot } = await executionDirectories(exec, ctx, signal);
   if (a.workdir !== undefined) {
-    const checked = await checkPaths([a.workdir], "write", cwd, ctx, c, signal);
+    const checked = await checkPaths([a.workdir], "write", cwd, ctx, c, signal, workspaceRoot);
     if (checked.kind !== "allow") return checked;
   }
   const base =
@@ -109,6 +110,7 @@ export async function checkShell(exec, ctx, c, signal) {
         ctx,
         c,
         signal,
+        workspaceRoot,
       );
     }
     if (exe === "pwd")
@@ -181,6 +183,7 @@ export async function checkShell(exec, ctx, c, signal) {
       ctx,
       c,
       signal,
+      workspaceRoot,
     );
   }
   if (c.shell.workspaceMutationCommands.includes(exe)) {
@@ -191,7 +194,7 @@ export async function checkShell(exec, ctx, c, signal) {
     );
     if (!paths.length || paths.some((x) => x.startsWith("-")))
       return escalate("SHELL_OPTIONS", "Unsupported mutation options");
-    return checkPaths(paths, "write", base, ctx, c, signal);
+    return checkPaths(paths, "write", base, ctx, c, signal, workspaceRoot);
   }
   return escalate("UNKNOWN_COMMAND", `Command ${exe} requires semantic review`);
 }
