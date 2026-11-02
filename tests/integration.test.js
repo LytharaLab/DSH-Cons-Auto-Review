@@ -239,6 +239,45 @@ test("real reviewer environment follows cwd and directory notices remain facts",
   assert.equal(notices.length, 1);
   assert.equal(notices[0].role, "fact");
 });
+test("live model capability changes select only advertised reasoning and leave safe writes model-free", async (t) => {
+  const f = await mounted(t);
+  const count = probe(f.ctx);
+  let lookups = 0;
+  let efforts = ["low", "high"];
+  f.adapter.resolveModel = async (provider, id) => {
+    lookups++;
+    return { provider, id, name: id, reasoning: {
+      efforts: efforts.map((id) => ({ id, name: id })),
+    } };
+  };
+  f.ctx.permissionPresets.set(f.session, "CAutoR");
+  assert.equal((await f.run("write", { file_path: "safe.txt", content: "ok" })).isError, false);
+  assert.equal(lookups, 0);
+  assert.equal(f.adapter.requests.length, 0);
+  assert.equal((await f.run("probe", {})).isError, false);
+  assert.equal(f.adapter.requests[0].reasoningEffort, "low");
+  efforts = ["high"];
+  assert.equal((await f.run("probe", {})).isError, false);
+  assert.equal(f.adapter.requests[1].reasoningEffort, undefined);
+  assert.equal(count(), 2);
+});
+test("model capability lookup failure asks in Chinese without executing or streaming", async (t) => {
+  const f = await mounted(t, { config: { review: { retries: 0 } } });
+  const count = probe(f.ctx);
+  f.adapter.resolveModel = async () => { throw new Error("model listing unavailable"); };
+  let asked = 0;
+  f.ctx.on("approval/request", (request) => {
+    asked++;
+    assert.equal(count(), 0);
+    assert.match(request.reason, /是否允许本次操作/);
+    return "rejected";
+  });
+  f.ctx.permissionPresets.set(f.session, "CAutoR");
+  assert.equal((await f.run("probe", {})).isError, true);
+  assert.equal(asked, 1);
+  assert.equal(count(), 0);
+  assert.equal(f.adapter.requests.length, 0);
+});
 test("real LLM and tool services recover max-tokens before executing once", async (t) => {
   const f = await mounted(t, { config: { review: { retryDelayMs: 0 } } });
   const count = probe(f.ctx);

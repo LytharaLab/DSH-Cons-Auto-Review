@@ -1,16 +1,16 @@
-# Con's 自动审查 — DCAR 1.2.1
+# Con's 自动审查 — DCAR 1.2.2
 
 [![npm version](https://img.shields.io/npm/v/@lytharalab/dsh-cons-auto-review.svg)](https://www.npmjs.com/package/@lytharalab/dsh-cons-auto-review)
 [![CI](https://github.com/LytharaLab/DSH-Cons-Auto-Review/actions/workflows/ci.yml/badge.svg)](https://github.com/LytharaLab/DSH-Cons-Auto-Review/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **English.** DCAR (`@lytharalab/dsh-cons-auto-review`) adds a **CAutoR** preset to the DeepSeek Harness permission menu. Deterministic rules approve safe operations first — workspace writes, declared temp/external roots, literal read-only shell commands — and only what a program cannot approve is escalated to the LLM auto-review. The deterministic layer returns `allow` or `escalate`, never a silent denial. Install with `dsh plugin --profile desktop add @lytharalab/dsh-cons-auto-review`; Node.js 22.19+ or 24+, tested against DSH `0.1.7-rc.2`, `0.2.0-rc.2` and `0.2.1-rc.2`. The detailed documentation below is in Chinese.
+> **English.** DCAR (`@lytharalab/dsh-cons-auto-review`) adds a **CAutoR** preset to the DeepSeek Harness permission menu. Deterministic rules approve safe operations first — workspace writes, declared temp/external roots, literal read-only shell commands — and only what a program cannot approve is escalated to the LLM auto-review. The deterministic layer returns `allow` or `escalate`, never a silent denial. Install with `dsh plugin --profile desktop add @lytharalab/dsh-cons-auto-review`; Node.js 22.19+ or 24+, tested against DSH `0.1.7-rc.2`, `0.2.0-rc.2`, `0.2.1-rc.2` and `0.2.1-rc.5`. The detailed documentation below is in Chinese.
 
 **`@lytharalab/dsh-cons-auto-review`** 为 DeepSeek Harness 的「权限」菜单添加 **CAutoR** 模式：先用 DSH「工作区内修改」的确定性路径规则自动放行安全操作，仅将无法由程序自动批准的操作交给 LLM Auto Review。第一层只返回 `allow` 或 `escalate`。
 
 ## 安装与启用
 
-包已发布到 npm：[`@lytharalab/dsh-cons-auto-review`](https://www.npmjs.com/package/@lytharalab/dsh-cons-auto-review)。要求 Node.js 22.19+ 或 24+；兼容并测试 DSH **0.1.7-rc.2**、**0.2.0-rc.2**、**0.2.1-rc.2**。DSH 的插件 API 仍在变化，其他版本不作为 1.2.1 的兼容承诺。
+包已发布到 npm：[`@lytharalab/dsh-cons-auto-review`](https://www.npmjs.com/package/@lytharalab/dsh-cons-auto-review)。要求 Node.js 22.19+ 或 24+；兼容并测试 DSH **0.1.7-rc.2**、**0.2.0-rc.2**、**0.2.1-rc.2**、**0.2.1-rc.5**。DSH 的插件 API 仍在变化，其他版本不作为 1.2.2 的兼容承诺。
 
 ```powershell
 dsh plugin --profile desktop add @lytharalab/dsh-cons-auto-review
@@ -20,7 +20,7 @@ Web 使用 `--profile web`。也可以离线安装解压的项目目录或仓库
 
 ```powershell
 dsh plugin --profile desktop add "L:\Projects\DSH-Cons-Auto-Review"
-dsh plugin --profile desktop add "L:\Projects\DSH-Cons-Auto-Review\lytharalab-dsh-cons-auto-review-1.2.1.tgz"
+dsh plugin --profile desktop add "L:\Projects\DSH-Cons-Auto-Review\lytharalab-dsh-cons-auto-review-1.2.2.tgz"
 ```
 
 **从旧包名升级：**包在首次公开发布时由 `dsh-cons-auto-review` 改名为 `@lytharalab/dsh-cons-auto-review`。关闭 Desktop，先移除旧包再装新包，然后重新打开：
@@ -65,6 +65,10 @@ profile 配置里若残留 `name: dsh-cons-auto-review` 的插件行或覆盖片
 - 动态权限策略：审查入口激活后才提供 CAutoR 审查；停用时取消等待中的审查并回退已加载会话。已保存的默认设置保留只读守护项。直接复用 Desktop 已有权限服务，无需替换 `permission` 配置行。
 
 CAutoR 的执行策略是 `danger-full-access`。它复用原模式的路径审查逻辑，并以程序检查及 LLM 作为授权入口；不使用原执行沙箱隔离进程。
+
+## 1.2.2 · DSH 0.2.1-rc.5 适配
+
+支持 DSH **0.2.1-rc.5**，保留此前三个版本的兼容性。测试依赖使用新版真实服务，CI 覆盖 Node.js 22 / 24 × 四个 DSH 版本；新增模型能力动态变化及能力查询失败的真实服务回归验证。
 
 ## 1.2.1 · DSH 0.2.1 适配
 

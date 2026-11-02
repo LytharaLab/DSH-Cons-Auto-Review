@@ -1,0 +1,6 @@
+DCAR 1.2.2 package smoke
+33 packed files match source byte for byte.
+8 public specifiers resolve from consumer scope.
+Entry ESM import and default configuration schema pass.
+No private notes, test records, test sources or CI files in tarball.
+All lockfile resolved URLs use registry.npmjs.org.

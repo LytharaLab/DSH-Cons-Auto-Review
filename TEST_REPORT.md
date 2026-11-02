@@ -1,5 +1,24 @@
 # DCAR 测试记录
 
+## 1.2.2 · 2026-11-02
+
+验证环境：Windows，Node.js v24.13.0，npm 11.6.2。逐版安装真实 DSH npm 服务，LLM 使用本地测试 Adapter。
+
+| 检查 | 结果 |
+|---|---|
+| DSH 0.2.1-rc.5 + `npm run verify` | 122 / 122 通过 |
+| DSH 0.2.1-rc.2 + `npm run verify` | 122 / 122 通过 |
+| DSH 0.2.0-rc.2 + `npm run verify` | 119 通过，3 项新版目录服务测试显式跳过，0 失败 |
+| DSH 0.1.7-rc.2 + `npm run verify` | 119 通过，3 项新版目录服务测试显式跳过，0 失败 |
+| rc.2 / rc.5 发布包比较 | 19 个直接 DSH 测试依赖的 169 个运行时及类型文件逐字节一致，包含新增/删除检查，不含 source map |
+| 最终干净安装与打包 | `npm ci` 后 122 / 122 通过；33 个打包文件与源码逐字节一致，8 个公共 specifier 可解析，入口及默认配置通过 |
+
+完整记录见 `test-results/1.2.2-*-windows-2026-11-02.txt`。新版 GitHub 标签基线为 `b830ec950faba0a46dda564be3e2d854afed94f1`。发布包比较支持继续复用当前适配逻辑，不代表整个 DSH 或各模型 provider 没有变化。
+
+新增两项真实 LLM / Tools / Approval 服务回归：动态能力从包含 `low` 变为仅有 `high` 后不再请求 `low`；工作区安全写入零模型能力查询和零模型流请求；能力查询失败时中文询问、拒绝后工具主体未执行且不发起模型流请求。已有工作目录、权限恢复、子 Agent、PTC、截断输出及中文审批验证全部保留。
+
+未安装到用户 Desktop profile，未运行真实远端模型 API 或统计实际窗口审批次数；本地测试中的审批事件计数不等同于 Desktop 验收。CI 已扩展为 Node.js 22 / 24 × 四个 DSH 版本，远程结果待确认推送后运行。
+
 ## 1.2.1 · 2026-10-17
 
 验证环境：Windows，Node.js v24.13.0，npm 11.6.2。逐版安装真实 DSH npm 服务，LLM 使用本地测试 Adapter。

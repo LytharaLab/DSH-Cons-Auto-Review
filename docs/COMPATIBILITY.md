@@ -2,17 +2,19 @@
 
 ## 支持版本
 
-DCAR 1.2.1 固定支持 DSH **0.1.7-rc.2**、**0.2.0-rc.2** 与 **0.2.1-rc.2**。关键路径使用官方扩展点 `tools/pre-execute`、权限 Session 投影、命令注册表、文件系统解析和 `ctx.llm.stream`。
+DCAR 1.2.2 固定支持 DSH **0.1.7-rc.2**、**0.2.0-rc.2**、**0.2.1-rc.2** 与 **0.2.1-rc.5**。关键路径使用官方扩展点 `tools/pre-execute`、权限 Session 投影、命令注册表、文件系统解析和 `ctx.llm.stream`。
 
 源码基线：DeepSeek Harness `639ed015397290b3745d163aafe02ffee4aa3f84`（`dsh-v0.2.0-rc.2`）；旧版本基线为 `477b4f420553e8a52c2fbccc464d7561b239c443`（`dsh-v0.1.7-rc.2`）。两版使用的 reviewer、permission service、containment 与文件路径解析源码一致。
 
 新增基线：[DeepSeek Harness `687f282e8625c6b8d11ff58211a90524be2e4317`](https://github.com/deepseek-ai/deepseek-harness/tree/687f282e8625c6b8d11ff58211a90524be2e4317)（`dsh-v0.2.1-rc.2`）。新版将当前执行目录与原始工作区分开；DCAR 按宿主当前目录检查相对路径并构造审查环境，保留原工作区作为程序批准边界。当前目录变化通知只作为历史事实，不构成授权。旧版通过能力探测沿用初始目录，无需安装新版目录服务。
 
+新增基线：[DeepSeek Harness `b830ec950faba0a46dda564be3e2d854afed94f1`](https://github.com/deepseek-ai/deepseek-harness/tree/b830ec950faba0a46dda564be3e2d854afed94f1)（`dsh-v0.2.1-rc.5`）。已核对 GitHub 标签、版本间提交及新版权限服务源码，并比较 rc.2 / rc.5 对应测试依赖发布包：19 个直接 DSH 依赖的 `lib/` 运行时代码与类型声明（不含 source map）逐字节一致，当前适配逻辑可直接复用。新增真实服务测试验证动态模型能力与查询失败路径；这不替代真实远端模型目录及网络的验收。
+
 ## CAutoR 集成方式
 
 官方权限服务只提供固定 `registerAuto()` 动态接口，通用自定义模式依赖静态预设表。1.0.2 由主插件在激活时给已存在的权限服务实例附加动态模式注册能力；安装补丁只插入 `dcar`，不替换宿主的权限服务行。
 
-运行时适配覆盖该服务实例的 `names/specOf/derive/apply`，复用原始 Session 事件、沙箱和审批 setter、`/permission`、Remote `catalog()`、投影及官方 Auto 注册。审查入口安装后注册 CAutoR；停用时取消审查、回退已加载会话，再撤销审查注册并还原服务原始属性；已保存的默认设置保留只读守护项。它需要官方类中 `specOf/derive/apply/emitCatalogChanged` 的运行时方法；这些不是通用稳定第三方扩展接口，因此依赖版本明确固定为以上三个版本，并在加载时检查方法可用性。插件不修改 DSH 安装目录中的源码，也不注册第二个权限服务。
+运行时适配覆盖该服务实例的 `names/specOf/derive/apply`，复用原始 Session 事件、沙箱和审批 setter、`/permission`、Remote `catalog()`、投影及官方 Auto 注册。审查入口安装后注册 CAutoR；停用时取消审查、回退已加载会话，再撤销审查注册并还原服务原始属性；已保存的默认设置保留只读守护项。它需要官方类中 `specOf/derive/apply/emitCatalogChanged` 的运行时方法；这些不是通用稳定第三方扩展接口，因此依赖版本明确固定为以上四个版本，并在加载时检查方法可用性。插件不修改 DSH 安装目录中的源码，也不注册第二个权限服务。
 
 DSH Web/desktop 的权限 UI 从该 `catalog()` 读取选项，自定义标签按服务端 `name` 显示，CAutoR 无需修改前端 bundle。
 
@@ -26,7 +28,7 @@ DSH Web/desktop 的权限 UI 从该 `catalog()` 读取选项，自定义标签�
 
 ## 已运行的检查
 
-见 `TEST_REPORT.md` 与 `test-results/`：三个发布版本分别安装对应的真实 DSH npm 包，运行完整插件测试；旧版显式跳过新版独有的目录服务场景。测试使用真实 Cordis、权限目录、Session、Session 投影、工具执行管线、原生文件读写工具、原生审批和命令服务；模型响应由本地测试 Adapter 提供。
+见 `TEST_REPORT.md` 与 `test-results/`：四个发布版本分别安装对应的真实 DSH npm 包，运行完整插件测试；旧版显式跳过新版独有的目录服务场景。测试使用真实 Cordis、权限目录、Session、Session 投影、工具执行管线、原生文件读写工具、原生审批和命令服务；模型响应由本地测试 Adapter 提供。
 
 覆盖本地零模型写入、按需升级、拒绝不执行、询问只在批准后执行、符号链接和目录前缀、Shell 混合语法、PTC 内部调用、子 Agent 与创建竞态、卸载回退、缺失审查提供者、配置验证、模型路由、重试、超时、并发、缓存和默认日志参数省略。
 
@@ -36,7 +38,7 @@ DSH Web/desktop 的权限 UI 从该 `catalog()` 读取选项，自定义标签�
 
 ## 验证范围
 
-1.2.1 验证环境为 Windows、Node.js 24.13.0；历史验证环境为 Linux、Node.js 24.19.0。未实际运行 Desktop 窗口、真实模型 API 或 OS 级沙箱进程。这里的 PTC 检查使用真实工具管线的 nested dispatch 输入，未启动 PTC VM。Node.js 22 / 24 的 Linux CI 矩阵仍需推送后运行。
+1.2.2 与 1.2.1 验证环境为 Windows、Node.js 24.13.0；历史验证环境为 Linux、Node.js 24.19.0。未实际运行 Desktop 窗口、真实模型 API 或 OS 级沙箱进程。这里的 PTC 检查使用真实工具管线的 nested dispatch 输入，未启动 PTC VM。Node.js 22 / 24 的 Linux CI 矩阵仍需推送后运行。
 
 默认设置测试使用真实 Settings、Loader 和权限服务，并将配置保存到测试 JSON 文件后重新加载。测试存储替代 DSH 的完整多层 YAML 配置编辑器；未启动实际 Desktop 设置页面。
 
