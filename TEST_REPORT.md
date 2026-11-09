@@ -1,5 +1,11 @@
 # DCAR 测试记录
 
+## 1.2.3 · 2026-11-10
+
+Windows、Node.js 26.13.0 和 npm 11.20.0 上分别安装五个 DSH 版本并运行 `npm run verify`。三个较新的 DSH 版本各通过 122 项。最早两个版本各通过 119 项，跳过 3 项会话目录服务测试。五个版本均无失败。
+
+0.2.2-rc.1 使用真实 Agent 注册表和原生工具执行器，验证默认权限保存、子 Agent 委派竞态、服务重载后保留 `never`、零模型工作区写入及中文审批。测试 Adapter 确认审查与翻译请求均携带会话 ID 和 `auto-review`。独立 Web profile 的 DSH CLI 安装并合成了发布包，8 个公共导出可解析，33 个打包文件均与源码一致。验证细节见 [Windows 测试记录](test-results/1.2.3-dsh-0.2.2-rc.1-windows-2026-11-10.txt)。
+
 ## 1.2.2 · 2026-11-02
 
 验证环境：Windows，Node.js v24.13.0，npm 11.6.2。逐版安装真实 DSH npm 服务，LLM 使用本地测试 Adapter。

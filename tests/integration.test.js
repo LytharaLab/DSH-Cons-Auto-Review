@@ -28,6 +28,17 @@ import { DORMANT_PRESET } from "../src/preset-defaults.js";
 const WorkingDirectory = ToolFS.inject.includes("workingDirectory")
   ? (await import("@deepseek-ai/dsh-working-directory")).default
   : undefined;
+// Newer hosts separate the tool registry from the executor and seed permissions
+// when an agent is announced. Mount the real services for both changes.
+const NativeExecutor = typeof ToolRuntime.prototype.setExecutor === "function"
+  ? await import("@deepseek-ai/dsh-tool-executor-native")
+  : undefined;
+const ToolExecutionPipeline = NativeExecutor
+  ? (await import("@deepseek-ai/dsh-tools/pipeline")).ToolExecutionPipeline
+  : undefined;
+const AgentRegistry = PermissionPresets.inject.includes("agents")
+  ? (await import("@deepseek-ai/dsh-agent")).default
+  : undefined;
 class Adapter extends LlmAdapter {
   requests = [];
   text = '{"risk":"low","decision":"allow"}';
@@ -42,8 +53,10 @@ async function mounted(t, options = {}) {
     ctx = new Context();
   await ctx.plugin(SessionStore);
   await ctx.plugin(Projection);
+  if (AgentRegistry) await ctx.plugin(AgentRegistry);
   await ctx.plugin(SystemPrompt);
   await ctx.plugin(ToolRuntime);
+  if (NativeExecutor) await ctx.plugin(NativeExecutor);
   await ctx.plugin(LlmRuntime);
   await ctx.plugin(LocalFS, { cwd: f.cwd });
   if (WorkingDirectory) await ctx.plugin(WorkingDirectory, { defaultDirectory: f.cwd });
@@ -100,16 +113,19 @@ async function mounted(t, options = {}) {
     await ctx.fiber.dispose();
     await rm(f.root, { recursive: true, force: true });
   });
-  const session = ctx.sessions.create(SessionId("integration"), {
-      meta: { cwd: f.cwd },
-    }),
-    agent = {
+  async function createAgent(id) {
+    const session = ctx.sessions.create(SessionId(id), { meta: { cwd: f.cwd } });
+    const agent = {
       ctx,
       inject() {},
       id: session.id,
       session,
       options: { provider: "test", model: "fake" },
     };
+    if (AgentRegistry) await ctx.agents.register(agent);
+    return agent;
+  }
+  const agent = await createAgent("integration"), { session } = agent;
   const calls = new WeakMap();
   async function run(name, args, caller = agent) {
     const session = caller.session;
@@ -150,24 +166,24 @@ async function mounted(t, options = {}) {
       },
       { surfaceOp: "append" },
     );
-    session.append("tool/call", {
-      turn: 1,
-      step: n,
-      callId: id,
-      name,
-      arguments: raw,
-    });
-    const result = await ctx.tools.execute({
-      name,
-      arguments: args,
-      agent: caller,
-      callId: id,
-      signal: new AbortController().signal,
-    });
+    const signal = new AbortController().signal;
+    let result;
+    if (NativeExecutor) {
+      const batch = await ctx.tools.execute({
+        agent: caller,
+        calls: [{ type: "tool-call", id, name, arguments: raw }],
+        log: { turn: 1, step: n },
+        signal,
+      });
+      result = batch.results[0].result;
+    } else {
+      session.append("tool/call", { turn: 1, step: n, callId: id, name, arguments: raw });
+      result = await ctx.tools.execute({ name, arguments: args, agent: caller, callId: id, signal });
+    }
     session.append("step/end", { turn: 1, step: n });
     return result;
   }
-  return { ...f, ctx, adapter, plugin, session, agent, run, entry, configFile, originalEdit };
+  return { ...f, ctx, adapter, plugin, session, agent, createAgent, run, entry, configFile, originalEdit };
 }
 function probe(ctx, name = "probe") {
   let runs = 0;
@@ -330,6 +346,10 @@ test("real native approval receives translated Chinese question before a rejecte
   assert.equal((await f.run("probe", { target: "staging" })).isError, true);
   assert.equal(count(), 0);
   assert.equal(f.adapter.requests.length, 2);
+  for (const request of f.adapter.requests) {
+    assert.equal(request.sessionId, f.session.id);
+    assert.equal(request.purpose, "auto-review");
+  }
 });
 test("max-tokens final denial cannot execute the real body or enter human approval", async (t) => {
   const f = await mounted(t, { config: { review: { tokenLimitRetries: 0, onError: "deny" } } });
@@ -383,8 +403,7 @@ test("native Settings persists CAutoR as the default and initializes reviewed ne
   const saved = JSON.parse(await readFile(f.configFile, "utf8"));
   assert.equal(saved.defaultPreset, "CAutoR");
   assert.deepEqual(saved.presets.CAutoR, DORMANT_PRESET);
-  const session = f.ctx.sessions.create(SessionId("default-session"), { meta: { cwd: f.cwd } });
-  const agent = { ...f.agent, id: session.id, session };
+  const agent = await f.createAgent("default-session"), { session } = agent;
   assert.equal(f.ctx.permissionPresets.current(session), "CAutoR");
   const state = f.ctx.sessionProjections.stateOf(session, "permissions");
   assert.equal(state.sandbox, "danger-full-access");
@@ -425,12 +444,14 @@ test("default-setting reload preserves delegated CAutoR review with approval nev
   const child = f.ctx.sessions.prepare(SessionId("default-reload-child"), {
     meta: { cwd: f.cwd, parentSession: f.session.id, origin: "subagent" },
   });
+  f.ctx.effect(() => f.ctx.sessions.enter(child));
+  if (AgentRegistry) f.ctx.sessions.announce(child);
   child.append("sandbox/mode", { mode: "danger-full-access", source: "delegation" });
   child.append("approval/policy", { policy: "never", source: "delegation" });
-  f.ctx.effect(() => f.ctx.sessions.enter(child));
-  f.ctx.sessions.announce(child);
+  if (!AgentRegistry) f.ctx.sessions.announce(child);
   const agent = { ...f.agent, id: child.id, session: child };
-  await f.ctx.serial("agent/created", { agent });
+  if (AgentRegistry) await f.ctx.agents.register(agent);
+  else await f.ctx.serial("agent/created", { agent });
   await f.ctx.settings.update("permission-custom", { defaultPreset: "CAutoR" });
   assert.equal(f.ctx.permissionPresets.current(child), "CAutoR");
   assert.equal(f.ctx.sessionProjections.stateOf(child, "permissions").approval, "never");
@@ -445,7 +466,7 @@ test("stopping a CAutoR default confines new sessions and reactivation restores 
   await f.ctx.settings.update("permission-custom", { defaultPreset: "CAutoR" });
   await f.plugin.dispose();
   assert.equal(Object.getOwnPropertyDescriptor(f.ctx.configEditor, "edit").value, f.originalEdit);
-  const pending = f.ctx.sessions.create(SessionId("provider-absent"), { meta: { cwd: f.cwd } });
+  const { session: pending } = await f.createAgent("provider-absent");
   const state = f.ctx.sessionProjections.stateOf(pending, "permissions");
   assert.equal(state.sandbox, "read-only");
   assert.equal(state.approval, "never");
@@ -456,23 +477,23 @@ test("stopping a CAutoR default confines new sessions and reactivation restores 
   assert.equal(f.ctx.permissionPresets.catalog().defaultOptions.filter((o) => o.value === "CAutoR").length, 1);
   assert.equal(f.ctx.permissionPresets.catalog().defaultOptions.find((o) => o.value === "CAutoR").name, "CAutoR");
   await f.ctx.settings.update("permission-custom", { defaultPreset: "workspace-write" });
-  const normal = f.ctx.sessions.create(SessionId("default-reset"), { meta: { cwd: f.cwd } });
+  const { session: normal } = await f.createAgent("default-reset");
   assert.equal(f.ctx.permissionPresets.current(normal), "workspace-write");
 });
 test("the legacy permission adapter also supports a persisted native CAutoR default", async (t) => {
   const f = await mounted(t, { settings: true, legacyBridge: true });
   await f.ctx.settings.update("permission-custom", { defaultPreset: "CAutoR" });
   assert.equal(f.ctx.permissionPresets.catalog().defaultPreset, "CAutoR");
-  const root = f.ctx.sessions.create(SessionId("legacy-default"), { meta: { cwd: f.cwd } });
+  const { session: root } = await f.createAgent("legacy-default");
   assert.equal(f.ctx.sessionProjections.stateOf(root, "permissions").sandbox, "danger-full-access");
 });
 test("a default CAutoR session cannot execute a tool denied by its reviewer", async (t) => {
   const f = await mounted(t, { settings: true, config: { review: { onDeny: "deny" } } });
   await f.ctx.settings.update("permission-custom", { defaultPreset: "CAutoR" });
-  const session = f.ctx.sessions.create(SessionId("default-deny"), { meta: { cwd: f.cwd } });
+  const agent = await f.createAgent("default-deny");
   const count = probe(f.ctx);
   f.adapter.text = '{"risk":"medium","decision":"deny","reason":"No authority"}';
-  const result = await f.run("probe", {}, { ...f.agent, id: session.id, session });
+  const result = await f.run("probe", {}, agent);
   assert.equal(result.isError, true);
   assert.equal(count(), 0);
   assert.equal(f.adapter.requests.length, 1);
@@ -712,7 +733,7 @@ async function inner(f, name, args) {
     name,
     arguments: args,
   });
-  return f.ctx.tools.execute({
+  const input = {
     name,
     arguments: args,
     agent: f.agent,
@@ -725,7 +746,12 @@ async function inner(f, name, args) {
       parameters: { type: "object" },
     },
     signal: new AbortController().signal,
-  });
+  };
+  if (!ToolExecutionPipeline) return f.ctx.tools.execute(input);
+  const pipeline = new ToolExecutionPipeline(f.ctx);
+  const prepared = await pipeline.prepare(input);
+  const outcome = prepared.kind === "dispatch" ? await pipeline.dispatch(prepared.exec) : prepared;
+  return pipeline.complete(prepared.exec, outcome);
 }
 test("PTC inner filesystem call uses the same deterministic gate", async (t) => {
   const f = await mounted(t);
@@ -770,7 +796,8 @@ test("subagent inheritance is captured at creation and survives later parent per
     session: child,
     options: { provider: "test", model: "fake" },
   };
-  await f.ctx.serial("agent/created", { agent: childAgent });
+  if (AgentRegistry) await f.ctx.agents.register(childAgent);
+  else await f.ctx.serial("agent/created", { agent: childAgent });
   assert.equal(f.ctx.permissionPresets.current(child), "CAutoR");
   f.ctx.permissionPresets.set(f.session, "danger-full-access");
   const definition = f.ctx.commands.find(childAgent, "dcar");
@@ -824,19 +851,21 @@ test("a parent permission change during the child creation window does not drop 
   const child = f.ctx.sessions.prepare(SessionId("racing-child"), {
     meta: { cwd: f.cwd, parentSession: f.session.id, origin: "subagent" },
   });
+  f.ctx.effect(() => f.ctx.sessions.enter(child));
+  f.ctx.permissionPresets.set(f.session, "workspace-write");
+  if (AgentRegistry) f.ctx.sessions.announce(child);
   child.append("sandbox/mode", {
     mode: "danger-full-access",
     source: "delegation",
   });
   child.append("approval/policy", { policy: "never", source: "delegation" });
-  f.ctx.permissionPresets.set(f.session, "workspace-write");
-  f.ctx.effect(() => f.ctx.sessions.enter(child));
-  f.ctx.sessions.announce(child);
+  if (!AgentRegistry) f.ctx.sessions.announce(child);
   const childAgent = {
     id: child.id,
     session: child,
     options: { provider: "test", model: "fake" },
   };
-  await f.ctx.serial("agent/created", { agent: childAgent });
+  if (AgentRegistry) await f.ctx.agents.register(childAgent);
+  else await f.ctx.serial("agent/created", { agent: childAgent });
   assert.equal(f.ctx.permissionPresets.current(child), "CAutoR");
 });

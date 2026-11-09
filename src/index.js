@@ -109,6 +109,16 @@ export function apply(ctx, input = {}) {
     if (!accepting || !config.enabled) throw new Error("DCAR is disabled or closing");
   };
   const getConfig = (session) => overrides.get(session) ?? config;
+  // Hosts that seed permissions at agent creation forbid Session writes
+  // during session/created, which can still veto publication.
+  const defaultOnAgentCreated = presets.constructor.inject?.includes("agents");
+  function applyFreshDefault(session) {
+    const state = ctx.sessionProjections.stateOf(session, "permissions");
+    if (!session.header.parentSession && state?.preset === null &&
+        state.sandbox === null && state.approval === null && !state.seeded &&
+        presets.defaultPreset === PRESET)
+      presets.set(session, config.enabled ? PRESET : config.lifecycle.fallbackPreset);
+  }
   function selected(session) {
     if (presets.current(session) === PRESET) return true;
     const state = ctx.sessionProjections.stateOf(session, "permissions");
@@ -144,19 +154,19 @@ export function apply(ctx, input = {}) {
       (session) => {
         if (!accepting) return;
         markInherited(session);
-        const state = ctx.sessionProjections.stateOf(session, "permissions");
-        if (!session.header.parentSession && state?.preset === null &&
-            state.sandbox === null && state.approval === null && !state.seeded &&
-            presets.defaultPreset === PRESET)
-          presets.set(session, accepting && config.enabled ? PRESET : config.lifecycle.fallbackPreset);
+        if (!defaultOnAgentCreated) applyFreshDefault(session);
       },
       { prepend: true },
     );
     yield stopAgentCreated = ctx.on("agent/created", ({ agent }) => {
       if (!accepting) return;
+      // Newer hosts append delegation overrides after session/created, before
+      // agent/created. Read them before the host fills in a missing preset.
+      markInherited(agent.session);
+      if (defaultOnAgentCreated) applyFreshDefault(agent.session);
       if (inherited.has(agent.session))
         agent.session.append("permission/preset", { preset: PRESET });
-    });
+    }, { prepend: true });
     yield stopGate = ctx.on(
       "tools/pre-execute",
       async (exec, next) => {
@@ -210,7 +220,12 @@ export function apply(ctx, input = {}) {
       const pending = handoff.get(session);
       handoff.delete(session);
       if (!config.enabled || !pending || pending.seq !== session.seq) continue;
-      presets.apply(session, PRESET, (policy) => setApprovalPolicy(session, pending.approval === "never" ? "never" : policy));
+      const keepNever = pending.approval === "never";
+      if (keepNever && ctx.approval.overrideOf(session) !== "never")
+        setApprovalPolicy(session, "never");
+      presets.apply(session, PRESET, (policy) => {
+        if (!keepNever) setApprovalPolicy(session, policy);
+      });
       if (pending.inherited) inherited.add(session);
     }
     // A session created while the persisted default's provider was absent starts

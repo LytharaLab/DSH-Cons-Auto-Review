@@ -42,8 +42,10 @@ export function registerReviewPreset(service, entries, name, spec, admit) {
 /** Persist a confined CAutoR entry through the host's normal config editor. */
 const persistenceKey = Symbol.for("dcar.default-persistence");
 export function attachDefaultPersistence(editor, service, admit) {
-  const provider = Object.getOwnPropertyDescriptor(service, "ctx")?.value?.fiber;
-  if (!provider) return () => {};
+  // Cordis can expose different views of one fiber through the service and
+  // loader. Within this editor's registry both views share a unique uid.
+  const providerId = Object.getOwnPropertyDescriptor(service, "ctx")?.value?.fiber.uid;
+  if (providerId == null) return () => {};
   let registry = Object.getOwnPropertyDescriptor(editor, persistenceKey)?.value;
   if (!registry) {
     const previous = Object.getOwnPropertyDescriptor(editor, "edit");
@@ -56,7 +58,7 @@ export function attachDefaultPersistence(editor, service, admit) {
     if (previous && !previous.configurable) throw new Error("DCAR cannot extend this config editor instance");
     const handlers = new Map();
     const wrapper = function (entry, change) {
-      const handler = handlers.get(entry.fiber);
+      const handler = handlers.get(entry.fiber?.uid);
       if (!handler) return original.call(this, entry, change);
       return original.call(this, entry, (current, inherited) => {
         const next = change(current, inherited);
@@ -71,10 +73,10 @@ export function attachDefaultPersistence(editor, service, admit) {
     Object.defineProperty(editor, persistenceKey, { value: registry, configurable: true });
   }
   const handler = { service, admit };
-  registry.handlers.set(provider, handler);
+  registry.handlers.set(providerId, handler);
   return () => {
-    if (registry.handlers.get(provider) !== handler) return;
-    registry.handlers.delete(provider);
+    if (registry.handlers.get(providerId) !== handler) return;
+    registry.handlers.delete(providerId);
     if (registry.handlers.size) return;
     if (Object.getOwnPropertyDescriptor(editor, "edit")?.value === registry.wrapper) {
       if (registry.previous) Object.defineProperty(editor, "edit", registry.previous);

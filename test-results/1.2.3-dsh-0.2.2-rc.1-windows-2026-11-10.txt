@@ -1,0 +1,22 @@
+DCAR 1.2.3 | Windows | Node.js 26.13.0 | npm 11.20.0
+DSH dsh-v0.2.2-rc.1: 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db
+
+npm run verify
+DSH version  Passed  Skipped  Failed
+0.1.7-rc.2      119        3       0
+0.2.0-rc.2      119        3       0
+0.2.1-rc.2      122        0       0
+0.2.1-rc.5      122        0       0
+0.2.2-rc.1      122        0       0
+
+The latest version used Cordis 4.1.0, Loader 1.1.0, the real DSH
+Agent registry and native tool executor, and a local model adapter.
+The tests covered dormant CAutoR settings, permission reload, delegation
+after Session publication, native approvals, and the model request metadata.
+Safe project writes made zero model requests. Rejected actions did not execute.
+
+The local npm tarball contained 33 files. Each matched its source by SHA-256.
+The DSH 0.2.2-rc.1 CLI installed the tarball in an isolated Web profile.
+Its composed configuration included the dcar entry and resolved all eight
+public package specifiers. Desktop window and remote model API testing were
+outside the scope of this run.

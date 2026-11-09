@@ -64,10 +64,10 @@
 
 ## 工作流的几个约定
 
-- 打标签（`v*`）触发真正的发布；手动 `workflow_dispatch` 只会跑校验与 `npm publish --dry-run`，不会真的上传。
+- 推送 `v*` 标签触发发布。手动 `workflow_dispatch` 运行校验和 `npm pack --dry-run`。
 - 只有 `publish.yml` 会执行 `npm publish`。npm 的 trusted publisher 绑定的是 workflow 文件名，出现第二个能发布的 workflow 会互相干扰。
 - 发布步骤使用 `--access public --provenance`；`actions/setup-node` 故意**不设置** `registry-url`，避免生成依赖 `NODE_AUTH_TOKEN` 的 `.npmrc`，发布目标由 `publishConfig.registry` 决定。
-- `.github/workflows/ci.yml` 在每次推送与 PR 上跑 Node 22/24 × DSH `0.1.7-rc.2` / `0.2.0-rc.2` 矩阵，另外单独校验 npm 包内容：必需文件齐全、`tests/`、`test-results/`、`.github/` 不得进入发布包。
+- `.github/workflows/ci.yml` 在分支推送与 PR 上用 Node.js 22 和 24 验证[受支持的 DSH 版本](COMPATIBILITY.md)，并单独检查 npm 包内容。必需文件须齐全，测试、测试记录及工作流仅留在仓库。
 
 ## 发布包内容
 

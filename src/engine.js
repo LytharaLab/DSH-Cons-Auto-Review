@@ -113,6 +113,8 @@ export class ReviewEngine {
           const options = {
             provider: c.review.provider || snapshot.provider,
             model: c.review.model || snapshot.model,
+            sessionId: exec.agent.session.id,
+            purpose: "auto-review",
             system:
               REVIEW_POLICY +
               (c.review.allowAsk

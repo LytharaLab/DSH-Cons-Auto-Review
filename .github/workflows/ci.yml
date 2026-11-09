@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         node: ['22', '24']
-        dsh: ['0.1.7-rc.2', '0.2.0-rc.2', '0.2.1-rc.2', '0.2.1-rc.5']
+        dsh: ['0.1.7-rc.2', '0.2.0-rc.2', '0.2.1-rc.2', '0.2.1-rc.5', '0.2.2-rc.1']
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -37,12 +37,17 @@ jobs:
           import { readFileSync } from 'node:fs';
           import { execFileSync } from 'node:child_process';
           const p = JSON.parse(readFileSync('package.json', 'utf8'));
+          const version = process.env.DSH_TEST_VERSION;
+          if (version === p.devDependencies['@deepseek-ai/dsh-tools']) process.exit(0);
+          const newHostServices = new Set(['@deepseek-ai/dsh-agent', '@deepseek-ai/dsh-tool-executor-native']);
           const packages = Object.keys(p.devDependencies)
             .filter(name => name.startsWith('@deepseek-ai/dsh-'))
-            // This optional test service does not exist in the older releases.
-            .filter(name => name !== '@deepseek-ai/dsh-working-directory' || ['0.2.1-rc.2', '0.2.1-rc.5'].includes(process.env.DSH_TEST_VERSION))
-            .map(name => `${name}@${process.env.DSH_TEST_VERSION}`);
-          execFileSync('npm', ['install', '--no-save', '--package-lock=false', '--legacy-peer-deps', ...packages], { stdio: 'inherit' });
+            .filter(name => !newHostServices.has(name))
+            .filter(name => name !== '@deepseek-ai/dsh-working-directory' || version.startsWith('0.2.1-'))
+            .map(name => `${name}@${version}`);
+          execFileSync('npm', ['install', '--no-save', '--package-lock=false', '--legacy-peer-deps',
+            '@deepseek-ai/cordis@4.0.4', '@deepseek-ai/cordis-plugin-loader@1.0.5', '@deepseek-ai/schemastery@3.18.4',
+            ...packages], { stdio: 'inherit' });
           JS
       - run: npm run verify
 
